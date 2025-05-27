@@ -29,3 +29,26 @@ chess_init_board(chess_board_t board)
     }
   }
 }
+
+static int
+chess_pawn_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
+{
+  chess_square_t s = board[ay][ax];
+  chess_color_t c = chess_color_from_square(s);
+  char direction = c * -2 + 1;
+
+  return by == ay + direction && 0 == board[by][bx];
+}
+
+int
+chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
+{
+  chess_square_t a = board[ay][ax];
+
+  switch (chess_piece_from_square(a)) {
+  case CHESS_PIECE_PAWN:
+    return chess_pawn_legal(board, ax, ay, bx, by);
+  default:
+    return 0;
+  }
+}
