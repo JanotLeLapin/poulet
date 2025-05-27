@@ -22,4 +22,10 @@ chess_init_board(chess_board_t board)
       board[i * 6 + 1][j] = chess_new_square(CHESS_PIECE_PAWN, (chess_color_t) i);
     }
   }
+
+  for (i = 2; i < 6; i++) {
+    for (j = 0; j < 8; j++) {
+      board[i][j] = 0;
+    }
+  }
 }
