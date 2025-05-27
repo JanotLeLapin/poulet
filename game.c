@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "game.h"
 
@@ -41,7 +42,7 @@ chess_pawn_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_
     // implement en passant later
     return bx == ax && (by == ay + direction || ((c == CHESS_COLOR_WHITE ? 6 : 1) == ay && by == ay + direction * 2 && 0 == board[ay + direction][ax]));
   } else {
-    return 0;
+    return c != chess_color_from_square(board[by][bx]) && 1 == abs(ax - bx) && by == ay + direction;
   }
 }
 
