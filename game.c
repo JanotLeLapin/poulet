@@ -128,6 +128,12 @@ rook_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
   return 1;
 }
 
+static int
+queen_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
+{
+  return bishop_legal(board, ax, ay, bx, by) || rook_legal(board, ax, ay, bx, by);
+}
+
 int
 chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
@@ -146,6 +152,8 @@ chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_
     return knight_legal(board, ax, ay, bx, by);
   case CHESS_PIECE_ROOK:
     return rook_legal(board, ax, ay, bx, by);
+  case CHESS_PIECE_QUEEN:
+    return queen_legal(board, ax, ay, bx, by);
   default:
     return 0;
   }
