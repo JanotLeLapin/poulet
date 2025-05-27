@@ -29,6 +29,18 @@ chess_new_square(chess_piece_t piece, chess_color_t color)
   return res;
 }
 
+inline static chess_piece_t
+chess_piece_from_square(chess_square_t square)
+{
+  return (chess_piece_t) (square & 0x07);
+}
+
+inline static chess_color_t
+chess_color_from_square(chess_square_t square)
+{
+  return (chess_color_t) (square >> 3);
+}
+
 inline static const char *
 chess_stringify_piece(chess_piece_t piece)
 {
