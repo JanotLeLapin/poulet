@@ -120,11 +120,15 @@ king_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 int
 chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
-  chess_square_t a = board[ay][ax];
+  chess_square_t a, b;
+
+  a = board[ay][ax];
+  b = board[by][bx];
 
   if (
-    (ax > 7 || ay > 7 || bx > 7 || by > 7) || (0 != board[by][bx]
-    && chess_color_from_square(board[by][bx]) == chess_color_from_square(board[ay][ax]))
+    (ax > 7 || ay > 7 || bx > 7 || by > 7)
+    || ((ax == bx) && (ay == by))
+    || (0 != b && chess_color_from_square(b) == chess_color_from_square(a))
   ) {
     return 0;
   }
