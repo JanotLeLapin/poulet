@@ -55,6 +55,13 @@ test_pawn()
   ASSERT(chess_legal_move(&game, 1, 6, 0, 5));
   ASSERT(!chess_legal_move(&game, 1, 6, 2, 5));
   ASSERT(!chess_legal_move(&game, 1, 6, 3, 4));
+
+  game.board[4][1] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_BLACK);
+  game.board[6][0] = 0;
+  game.board[6][2] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_WHITE);
+  game.meta = 1;
+  ASSERT(chess_legal_move(&game, 1, 4, 0, 5));
+  ASSERT(!chess_legal_move(&game, 1, 4, 2, 5));
 }
 
 void
