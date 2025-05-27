@@ -97,10 +97,10 @@ chess_get_castling_rights(chess_meta_t meta, chess_color_t color)
   return 0 != (meta & 0x01 << (color + 3));
 }
 
-void chess_init_board(chess_board_t board);
+void chess_init(chess_game_t *game);
 
-int chess_is_check(chess_board_t board, chess_color_t color);
-int chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
-int chess_safe_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
+int chess_is_check(chess_game_t *game, chess_color_t color);
+int chess_legal_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
+int chess_safe_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
 
 #endif

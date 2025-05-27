@@ -32,17 +32,17 @@ chess_init_board(chess_board_t board)
 }
 
 static int
-pawn_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
+pawn_legal(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
-  chess_square_t s = board[ay][ax];
+  chess_square_t s = game->board[ay][ax];
   chess_color_t c = chess_color_from_square(s);
   char direction = c * -2 + 1;
 
-  if (0 == board[by][bx]) {
+  if (0 == game->board[by][bx]) {
     // implement en passant later
-    return bx == ax && (by == ay + direction || ((c == CHESS_COLOR_WHITE ? 6 : 1) == ay && by == ay + direction * 2 && 0 == board[ay + direction][ax]));
+    return bx == ax && (by == ay + direction || ((c == CHESS_COLOR_WHITE ? 6 : 1) == ay && by == ay + direction * 2 && 0 == game->board[ay + direction][ax]));
   } else {
-    return c != chess_color_from_square(board[by][bx]) && 1 == abs(ax - bx) && by == ay + direction;
+    return c != chess_color_from_square(game->board[by][bx]) && 1 == abs(ax - bx) && by == ay + direction;
   }
 }
 
@@ -112,7 +112,7 @@ queen_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 }
 
 static int
-king_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
+king_legal(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
   return abs(bx - ax) <= 1 && abs(by - ay) <= 1;
 }
@@ -135,19 +135,19 @@ find_king(chess_board_t board, chess_color_t color)
 }
 
 int
-chess_is_check(chess_board_t board, chess_color_t color)
+chess_is_check(chess_game_t *game, chess_color_t color)
 {
   char res = 0;
   uint16_t king_pos;
   uint8_t i, j, kx, ky;
 
-  king_pos = find_king(board, color);
+  king_pos = find_king(game->board, color);
   kx = (king_pos >> 8) & 0xFF;
   ky = king_pos & 0xFF;
 
   for (i = 0; i < 8; i++) {
     for (j = 0; j < 8; j++) {
-      if (0 != board[i][j] && color != chess_color_from_square(board[i][j]) && chess_legal_move(board, j, i, kx, ky)) {
+      if (0 != game->board[i][j] && color != chess_color_from_square(game->board[i][j]) && chess_legal_move(game, j, i, kx, ky)) {
         return 1;
       }
     }
@@ -157,12 +157,12 @@ chess_is_check(chess_board_t board, chess_color_t color)
 }
 
 int
-chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
+chess_legal_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
   chess_square_t a, b;
 
-  a = board[ay][ax];
-  b = board[by][bx];
+  a = game->board[ay][ax];
+  b = game->board[by][bx];
 
   if (
     (ax > 7 || ay > 7 || bx > 7 || by > 7)
@@ -174,43 +174,43 @@ chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_
 
   switch (chess_piece_from_square(a)) {
   case CHESS_PIECE_PAWN:
-    return pawn_legal(board, ax, ay, bx, by);
+    return pawn_legal(game, ax, ay, bx, by);
   case CHESS_PIECE_BISHOP:
-    return bishop_legal(board, ax, ay, bx, by);
+    return bishop_legal(game->board, ax, ay, bx, by);
   case CHESS_PIECE_KNIGHT:
-    return knight_legal(board, ax, ay, bx, by);
+    return knight_legal(game->board, ax, ay, bx, by);
   case CHESS_PIECE_ROOK:
-    return rook_legal(board, ax, ay, bx, by);
+    return rook_legal(game->board, ax, ay, bx, by);
   case CHESS_PIECE_QUEEN:
-    return queen_legal(board, ax, ay, bx, by);
+    return queen_legal(game->board, ax, ay, bx, by);
   case CHESS_PIECE_KING:
-    return king_legal(board, ax, ay, bx, by);
+    return king_legal(game, ax, ay, bx, by);
   default:
     return 0;
   }
 }
 
 int
-chess_safe_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
+chess_safe_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
   chess_square_t a, b;
   chess_color_t c;
   int res;
 
-  if (!chess_legal_move(board, ax, ay, bx, by)) {
+  if (!chess_legal_move(game, ax, ay, bx, by)) {
     return 0;
   }
 
-  a = board[ay][ax];
-  b = board[by][bx];
+  a = game->board[ay][ax];
+  b = game->board[by][bx];
   c = chess_color_from_square(a);
 
-  board[ay][ax] = 0;
-  board[by][bx] = a;
+  game->board[ay][ax] = 0;
+  game->board[by][bx] = a;
 
-  res = !chess_is_check(board, c);
-  board[ay][ax] = a;
-  board[by][bx] = b;
+  res = !chess_is_check(game, c);
+  game->board[ay][ax] = a;
+  game->board[by][bx] = b;
 
   return res;
 }
