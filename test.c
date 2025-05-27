@@ -4,9 +4,22 @@
 
 #include "game.h"
 
+#define COLOR_RESET "\x1b[0m"
+#define COLOR_INFO  "\x1b[32m"
+#define COLOR_ERROR "\x1b[31m"
+
+#define LOG(color, tag, fmt, ...) \
+  fprintf(stderr, "[" color tag COLOR_RESET ":%s:%d]: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__)
+
+#define LOG_ERROR(fmt, ...) \
+  LOG(COLOR_ERROR, "error", fmt, ##__VA_ARGS__)
+
+#define LOG_INFO(fmt, ...) \
+  LOG(COLOR_INFO, "info", fmt, ##__VA_ARGS__)
+
 #define ASSERT_EQ(a, b, fmt) \
   if ((a) != (b)) { \
-    fprintf(stderr, "expected to be '" fmt "', found '" fmt "'\n", a, b); \
+    LOG_ERROR("expected '" #b "' to be '" fmt "', found '" fmt "'", a, b); \
     exit(1); \
   }
 
@@ -14,7 +27,7 @@
 
 #define ASSERT(bool) \
   if (!(bool)) { \
-    fprintf(stderr, "bool is false\n"); \
+    LOG_ERROR("assertion failed: " #bool); \
     exit(1); \
   }
 
@@ -28,6 +41,8 @@ void
 test_pawn()
 {
   chess_board_t board;
+
+  LOG_INFO("testing pawn");
 
   empty_board(board);
   board[5][0] = chess_new_square(CHESS_PIECE_KNIGHT, CHESS_COLOR_BLACK);
@@ -45,6 +60,8 @@ void
 test_bishop()
 {
   chess_board_t board;
+
+  LOG_INFO("testing bishop");
 
   empty_board(board);
   board[3][2] = chess_new_square(CHESS_PIECE_BISHOP, CHESS_COLOR_BLACK);
@@ -78,5 +95,5 @@ main()
   test_pawn();
   test_bishop();
 
-  fprintf(stderr, "ran tests successfully\n");
+  LOG_INFO("successfully ran test cases");
 }
