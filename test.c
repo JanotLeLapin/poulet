@@ -89,11 +89,36 @@ test_bishop()
   ASSERT(!chess_legal_move(board, 2, 3, 7, 1));
 }
 
+void
+test_knight()
+{
+  chess_board_t board;
+
+  LOG_INFO("testing knight");
+
+  empty_board(board);
+  board[3][2] = chess_new_square(CHESS_PIECE_KNIGHT, CHESS_COLOR_WHITE);
+  ASSERT(chess_legal_move(board, 2, 3, 0, 2));
+  ASSERT(chess_legal_move(board, 2, 3, 0, 4));
+  ASSERT(chess_legal_move(board, 2, 3, 4, 4));
+  ASSERT(chess_legal_move(board, 2, 3, 4, 2));
+  ASSERT(chess_legal_move(board, 2, 3, 4, 4));
+  ASSERT(!chess_legal_move(board, 2, 3, 4, 5));
+  ASSERT(!chess_legal_move(board, 2, 3, 2, 6));
+
+  board[4][4] = chess_new_square(CHESS_PIECE_KNIGHT, CHESS_COLOR_WHITE);
+  ASSERT(!chess_legal_move(board, 2, 3, 4, 4));
+
+  board[4][4] = chess_new_square(CHESS_PIECE_KNIGHT, CHESS_COLOR_BLACK);
+  ASSERT(chess_legal_move(board, 2, 3, 4, 4));
+}
+
 int
 main()
 {
   test_pawn();
   test_bishop();
+  test_knight();
 
   LOG_INFO("successfully ran test cases");
 }
