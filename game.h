@@ -13,8 +13,8 @@ typedef enum {
 } chess_piece_t;
 
 typedef enum {
-  CHESS_COLOR_WHITE = 0,
-  CHESS_COLOR_BLACK = 1,
+  CHESS_COLOR_BLACK = 0,
+  CHESS_COLOR_WHITE,
 } chess_color_t;
 
 typedef uint8_t chess_square_t;
