@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "game.h"
 
@@ -17,14 +18,27 @@
     exit(1); \
   }
 
+static inline void
+empty_board(chess_board_t board)
+{
+  memset(board, 0, sizeof(chess_board_t));
+}
+
 void
 test_pawn()
 {
   chess_board_t board;
-  chess_init_board(board);
 
-  ASSERT(chess_legal_move(board, 3, 6, 3, 5));
-  ASSERT(chess_legal_move(board, 3, 6, 3, 4));
+  empty_board(board);
+  board[5][0] = chess_new_square(CHESS_PIECE_KNIGHT, CHESS_COLOR_BLACK);
+  board[6][0] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_WHITE);
+  board[6][1] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_WHITE);
+  ASSERT(!chess_legal_move(board, 0, 6, 0, 4));
+  ASSERT(chess_legal_move(board, 1, 6, 1, 4));
+  ASSERT(chess_legal_move(board, 1, 6, 1, 5));
+  ASSERT(chess_legal_move(board, 1, 6, 0, 5));
+  ASSERT(!chess_legal_move(board, 1, 6, 2, 5));
+  ASSERT(!chess_legal_move(board, 1, 6, 3, 4));
 }
 
 int
