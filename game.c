@@ -93,6 +93,41 @@ knight_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by
   return 2 == dx && 1 == dy || 2 == dy && 1 == dx;
 }
 
+static int
+rook_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
+{
+  chess_square_t s, target;
+  char step, i;
+
+  if (bx != ax && by != ay) {
+    return 0;
+  }
+
+  s = board[ay][ax];
+  target = board[by][bx];
+  if (0 != target && chess_color_from_square(target) == chess_color_from_square(s)) {
+    return 0;
+  }
+
+  if (bx == ax) {
+    step = by < ay ? -1 : 1;
+    for (i = 1; i < abs(by - ay); i++) {
+      if (0 != board[ay + step * i][ax]) {
+        return 0;
+      }
+    }
+  } else {
+    step = bx < ax ? -1 : 1;
+    for (i = 1; i < abs(bx - ax); i++){
+      if (0 != board[ay][ax + step * i]) {
+        return 0;
+      }
+    }
+  }
+
+  return 1;
+}
+
 int
 chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
@@ -109,6 +144,8 @@ chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_
     return bishop_legal(board, ax, ay, bx, by);
   case CHESS_PIECE_KNIGHT:
     return knight_legal(board, ax, ay, bx, by);
+  case CHESS_PIECE_ROOK:
+    return rook_legal(board, ax, ay, bx, by);
   default:
     return 0;
   }
