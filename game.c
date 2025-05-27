@@ -122,11 +122,10 @@ chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_
 {
   chess_square_t a = board[ay][ax];
 
-  if (ax > 7 || ay > 7 || bx > 7 || by > 7) {
-    return 0;
-  }
-
-  if (0 != board[by][bx] && chess_color_from_square(board[by][bx]) == chess_color_from_square(board[ay][ax])) {
+  if (
+    (ax > 7 || ay > 7 || bx > 7 || by > 7) || (0 != board[by][bx]
+    && chess_color_from_square(board[by][bx]) == chess_color_from_square(board[ay][ax]))
+  ) {
     return 0;
   }
 
