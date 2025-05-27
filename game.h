@@ -80,6 +80,8 @@ chess_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 
 void chess_init_board(chess_board_t board);
 
+int chess_is_check(chess_board_t board, chess_color_t color);
 int chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
+int chess_safe_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
 
 #endif

@@ -117,6 +117,45 @@ king_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
   return abs(bx - ax) <= 1 && abs(by - ay) <= 1;
 }
 
+static uint16_t
+find_king(chess_board_t board, chess_color_t color)
+{
+  uint16_t res = 0;
+  uint8_t i, j;
+
+  for (i = 0; i < 8; i++) {
+    for (j = 0; j < 8; j++) {
+      if (CHESS_PIECE_KING == chess_piece_from_square(board[i][j]) && color == chess_color_from_square(board[i][j])) {
+        return (j << 8) | i;
+      }
+    }
+  }
+
+  return 0;
+}
+
+int
+chess_is_check(chess_board_t board, chess_color_t color)
+{
+  char res = 0;
+  uint16_t king_pos;
+  uint8_t i, j, kx, ky;
+
+  king_pos = find_king(board, color);
+  kx = (king_pos >> 8) & 0xFF;
+  ky = king_pos & 0xFF;
+
+  for (i = 0; i < 8; i++) {
+    for (j = 0; j < 8; j++) {
+      if (0 != board[i][j] && color != chess_color_from_square(board[i][j]) && chess_legal_move(board, j, i, kx, ky)) {
+        return 1;
+      }
+    }
+  }
+
+  return 0;
+}
+
 int
 chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
@@ -149,4 +188,29 @@ chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_
   default:
     return 0;
   }
+}
+
+int
+chess_safe_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
+{
+  chess_square_t a, b;
+  chess_color_t c;
+  int res;
+
+  if (!chess_legal_move(board, ax, ay, bx, by)) {
+    return 0;
+  }
+
+  a = board[ay][ax];
+  b = board[by][bx];
+  c = chess_color_from_square(a);
+
+  board[ay][ax] = 0;
+  board[by][bx] = a;
+
+  res = !chess_is_check(board, c);
+  board[ay][ax] = a;
+  board[by][bx] = b;
+
+  return res;
 }

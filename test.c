@@ -141,6 +141,49 @@ test_rook()
   ASSERT(!chess_legal_move(board, 3, 4, 3, 6));
 }
 
+void
+test_check()
+{
+  chess_board_t board;
+
+  LOG_INFO("testing check");
+
+  empty_board(board);
+  board[2][2] = chess_new_square(CHESS_PIECE_KING, CHESS_COLOR_WHITE);
+  board[4][5] = chess_new_square(CHESS_PIECE_KING, CHESS_COLOR_BLACK);
+  ASSERT(!chess_is_check(board, CHESS_COLOR_WHITE));
+  ASSERT(!chess_is_check(board, CHESS_COLOR_BLACK));
+
+  board[2][4] = chess_new_square(CHESS_PIECE_ROOK, CHESS_COLOR_BLACK);
+  ASSERT(chess_is_check(board, CHESS_COLOR_WHITE));
+  ASSERT(!chess_is_check(board, CHESS_COLOR_BLACK));
+
+  board[7][2] = chess_new_square(CHESS_PIECE_BISHOP, CHESS_COLOR_WHITE);
+  ASSERT(chess_is_check(board, CHESS_COLOR_WHITE));
+  ASSERT(chess_is_check(board, CHESS_COLOR_BLACK));
+}
+
+void
+test_safe()
+{
+  chess_board_t board;
+
+  LOG_INFO("testing safe");
+
+  empty_board(board);
+  board[4][0] = chess_new_square(CHESS_PIECE_KING, CHESS_COLOR_WHITE);
+  board[7][7] = chess_new_square(CHESS_PIECE_KING, CHESS_COLOR_BLACK);
+  board[4][1] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_WHITE);
+  board[4][4] = chess_new_square(CHESS_PIECE_ROOK, CHESS_COLOR_BLACK);
+  board[4][7] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_WHITE);
+  ASSERT(chess_safe_move(board, 7, 4, 7, 3));
+  ASSERT(!chess_safe_move(board, 1, 4, 1, 3));
+
+  board[4][1] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_BLACK);
+  ASSERT(chess_safe_move(board, 7, 4, 7, 3));
+  ASSERT(chess_safe_move(board, 1, 4, 1, 5));
+}
+
 int
 main()
 {
@@ -148,6 +191,9 @@ main()
   test_bishop();
   test_knight();
   test_rook();
+
+  test_check();
+  test_safe();
 
   LOG_INFO("successfully ran test cases");
 }
