@@ -20,6 +20,13 @@ typedef enum {
 typedef uint8_t chess_square_t;
 typedef chess_square_t chess_board_t[8][8];
 
+typedef uint8_t chess_meta_t;
+
+typedef struct {
+  chess_board_t board;
+  chess_meta_t meta;
+} chess_game_t;
+
 inline static chess_square_t
 chess_new_square(chess_piece_t piece, chess_color_t color)
 {
@@ -76,6 +83,18 @@ chess_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
   board[by][bx] = board[ay][ax];
   board[ay][ax] = 0;
+}
+
+inline static uint8_t
+chess_get_enpassant(chess_meta_t meta)
+{
+  return meta & 0x07;
+}
+
+inline static uint8_t
+chess_get_castling_rights(chess_meta_t meta, chess_color_t color)
+{
+  return 0 != (meta & 0x01 << (color + 3));
 }
 
 void chess_init_board(chess_board_t board);
