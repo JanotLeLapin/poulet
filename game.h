@@ -85,16 +85,16 @@ chess_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
   board[ay][ax] = 0;
 }
 
-inline static uint8_t
+inline static int
 chess_get_enpassant(chess_meta_t meta)
 {
-  return meta & 0x07;
+  return (0x01 == (meta & 0x01)) ? (meta >> 1) & 0x07 : -1;
 }
 
 inline static uint8_t
 chess_get_castling_rights(chess_meta_t meta, chess_color_t color)
 {
-  return 0 != (meta & 0x01 << (color + 3));
+  return 0 != (meta & 0x01 << (color + 4));
 }
 
 void chess_init(chess_game_t *game);
