@@ -51,6 +51,10 @@ chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_
 {
   chess_square_t a = board[ay][ax];
 
+  if (ax > 7 || ay > 7 || bx > 7 || by > 7) {
+    return 0;
+  }
+
   switch (chess_piece_from_square(a)) {
   case CHESS_PIECE_PAWN:
     return chess_pawn_legal(board, ax, ay, bx, by);
