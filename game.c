@@ -46,6 +46,33 @@ pawn_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
   }
 }
 
+static int
+bishop_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
+{
+  chess_square_t s, target;
+  char vx, vy, i;
+
+  if (abs(bx - ax) != abs(by - ay)) {
+    return 0;
+  }
+
+  s = board[ay][ax];
+  target = board[by][bx];
+  if (0 != target && chess_color_from_square(target) == chess_color_from_square(s)) {
+    return 0;
+  }
+
+  vx = bx < ax ? -1 : 1;
+  vy = by < ay ? -1 : 1;
+  for (i = 1; i < abs(bx - ax); i++) {
+    if (0 != board[ay + vy][ax + vx]) {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
 int
 chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
@@ -58,6 +85,8 @@ chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_
   switch (chess_piece_from_square(a)) {
   case CHESS_PIECE_PAWN:
     return pawn_legal(board, ax, ay, bx, by);
+  case CHESS_PIECE_BISHOP:
+    return bishop_legal(board, ax, ay, bx, by);
   default:
     return 0;
   }
