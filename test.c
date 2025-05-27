@@ -70,6 +70,7 @@ test_bishop()
   ASSERT(chess_legal_move(board, 2, 3, 0, 5));
   ASSERT(chess_legal_move(board, 2, 3, 1, 2));
   ASSERT(chess_legal_move(board, 2, 3, 4, 1));
+  ASSERT(chess_legal_move(board, 2, 3, 3, 2));
   ASSERT(!chess_legal_move(board, 2, 3, 7, 1));
 
   board[4][3] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_BLACK);
@@ -79,6 +80,7 @@ test_bishop()
   ASSERT(chess_legal_move(board, 2, 3, 1, 2));
   ASSERT(chess_legal_move(board, 2, 3, 4, 1));
   ASSERT(!chess_legal_move(board, 2, 3, 7, 1));
+  ASSERT(!chess_legal_move(board, 3, 2, 5, 4));
 
   board[4][3] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_WHITE);
   ASSERT(!chess_legal_move(board, 2, 3, 4, 5));
@@ -87,6 +89,7 @@ test_bishop()
   ASSERT(chess_legal_move(board, 2, 3, 1, 2));
   ASSERT(chess_legal_move(board, 2, 3, 4, 1));
   ASSERT(!chess_legal_move(board, 2, 3, 7, 1));
+  ASSERT(!chess_legal_move(board, 3, 2, 5, 4));
 }
 
 void

@@ -65,7 +65,7 @@ bishop_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by
   vx = bx < ax ? -1 : 1;
   vy = by < ay ? -1 : 1;
   for (i = 1; i < abs(bx - ax); i++) {
-    if (0 != board[ay + vy][ax + vx]) {
+    if (0 != board[ay + vy * i][ax + vx * i]) {
       return 0;
     }
   }
