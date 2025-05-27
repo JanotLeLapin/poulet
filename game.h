@@ -59,4 +59,6 @@ chess_stringify_color(chess_color_t color)
   }
 }
 
+void chess_init_board(chess_board_t board);
+
 #endif
