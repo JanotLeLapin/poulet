@@ -37,7 +37,12 @@ chess_pawn_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_
   chess_color_t c = chess_color_from_square(s);
   char direction = c * -2 + 1;
 
-  return by == ay + direction && 0 == board[by][bx];
+  if (0 == board[by][bx]) {
+    // implement en passant later
+    return bx == ax && (by == ay + direction || ((c == CHESS_COLOR_WHITE ? 6 : 1) == ay && by == ay + direction * 2 && 0 == board[ay + direction][ax]));
+  } else {
+    return 0;
+  }
 }
 
 int
