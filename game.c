@@ -49,16 +49,9 @@ pawn_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 static int
 bishop_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
-  chess_square_t s, target;
   char vx, vy, i;
 
   if (abs(bx - ax) != abs(by - ay)) {
-    return 0;
-  }
-
-  s = board[ay][ax];
-  target = board[by][bx];
-  if (0 != target && chess_color_from_square(target) == chess_color_from_square(s)) {
     return 0;
   }
 
@@ -76,16 +69,7 @@ bishop_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by
 static int
 knight_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
-  chess_square_t s, target;
-  int dx;
-  int dy;
-
-  s = board[ay][ax];
-  target = board[by][bx];
-
-  if (0 != target && chess_color_from_square(target) == chess_color_from_square(s)) {
-    return 0;
-  }
+  char dx, dy;
 
   dx = abs(bx - ax);
   dy = abs(by - ay);
@@ -96,16 +80,9 @@ knight_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by
 static int
 rook_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
-  chess_square_t s, target;
   char step, i;
 
   if (bx != ax && by != ay) {
-    return 0;
-  }
-
-  s = board[ay][ax];
-  target = board[by][bx];
-  if (0 != target && chess_color_from_square(target) == chess_color_from_square(s)) {
     return 0;
   }
 
@@ -140,6 +117,10 @@ chess_legal_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_
   chess_square_t a = board[ay][ax];
 
   if (ax > 7 || ay > 7 || bx > 7 || by > 7) {
+    return 0;
+  }
+
+  if (0 != board[by][bx] && chess_color_from_square(board[by][bx]) == chess_color_from_square(board[ay][ax])) {
     return 0;
   }
 
