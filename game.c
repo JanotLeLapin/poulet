@@ -117,10 +117,43 @@ queen_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
   return bishop_legal(board, ax, ay, bx, by) || rook_legal(board, ax, ay, bx, by);
 }
 
-static int
+static chess_move_t
 king_legal(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
-  return abs(bx - ax) <= 1 && abs(by - ay) <= 1;
+  chess_square_t s;
+  chess_color_t c;
+  char step;
+  uint8_t i, can_castle = CHESS_MOVE_CASTLE;
+
+  if (abs(bx - ax) <= 1 && abs(by - ay) <= 1) {
+    return CHESS_MOVE_LEGAL;
+  }
+
+  s = game->board[ay][ax];
+  c = chess_color_from_square(s);
+  if (abs(bx - ax) == 2 && by == ay && chess_get_castling_rights(game->meta, c) && !chess_is_check(game, c)) {
+    step = bx < ax ? -1 : 1;
+    for (i = 1; i <= 2; i++) {
+      if (0 != game->board[ay][ax + step * i]) {
+        can_castle = CHESS_MOVE_ILLEGAL;
+        break;
+      }
+
+      game->board[ay][ax + step] = game->board[ay][ax + step - 1];
+      game->board[ay][ax + step - 1] = 0;
+      if (chess_is_check(game, c)) {
+        can_castle = CHESS_MOVE_ILLEGAL;
+        break;
+      }
+    }
+
+    game->board[by][bx] = 0;
+    game->board[ay][ax] = s;
+
+    return can_castle;
+  }
+
+  return CHESS_MOVE_ILLEGAL;
 }
 
 static uint16_t
@@ -245,9 +278,10 @@ chess_safe_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t 
     game->board[by][bx] = 0;
     game->board[enpassant_y][bx] = b;
     break;
+  case CHESS_MOVE_CASTLE:
   case CHESS_MOVE_UNSAFE:
   case CHESS_MOVE_ILLEGAL:
-    return CHESS_MOVE_ILLEGAL;
+    return move;
   }
 
   return is_check ? CHESS_MOVE_UNSAFE : move;

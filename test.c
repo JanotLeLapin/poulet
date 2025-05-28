@@ -222,6 +222,26 @@ test_safe()
 }
 
 void
+test_castle()
+{
+  chess_game_t game;
+
+  LOG_INFO("testing castle");
+
+  chess_init(&game);
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 6, 7));
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 2, 7));
+
+  game.board[7][5] = 0;
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 6, 7));
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 2, 7));
+
+  game.board[7][6] = 0;
+  ASSERT_INT_EQ(CHESS_MOVE_CASTLE, chess_legal_move(&game, 4, 7, 6, 7));
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 2, 7));
+}
+
+void
 test_main()
 {
   chess_game_t game;
@@ -243,6 +263,7 @@ main()
 
   test_check();
   test_safe();
+  test_castle();
 
   test_main();
 
