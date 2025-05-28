@@ -88,13 +88,6 @@ chess_stringify_color(chess_color_t color)
   }
 }
 
-inline static void
-chess_move(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
-{
-  board[by][bx] = board[ay][ax];
-  board[ay][ax] = 0;
-}
-
 inline static int
 chess_get_enpassant(chess_meta_t meta)
 {
@@ -112,5 +105,7 @@ void chess_init(chess_game_t *game);
 int chess_is_check(chess_game_t *game, chess_color_t color);
 chess_move_t chess_legal_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
 chess_move_t chess_safe_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
+
+void chess_do_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
 
 #endif
