@@ -17,6 +17,15 @@ typedef enum {
   CHESS_COLOR_WHITE,
 } chess_color_t;
 
+typedef enum {
+  CHESS_MOVE_ILLEGAL = 0,
+  CHESS_MOVE_LEGAL,
+  CHESS_MOVE_TAKE,
+  CHESS_MOVE_TAKE_ENPASSANT,
+
+  CHESS_MOVE_UNSAFE,
+} chess_move_t;
+
 typedef uint8_t chess_square_t;
 typedef chess_square_t chess_board_t[8][8];
 
@@ -100,7 +109,7 @@ chess_get_castling_rights(chess_meta_t meta, chess_color_t color)
 void chess_init(chess_game_t *game);
 
 int chess_is_check(chess_game_t *game, chess_color_t color);
-int chess_legal_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
-int chess_safe_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
+chess_move_t chess_legal_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
+chess_move_t chess_safe_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
 
 #endif

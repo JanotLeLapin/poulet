@@ -42,7 +42,7 @@ pawn_legal(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
   if (0 == game->board[by][bx]) {
     en_passant = chess_get_enpassant(game->meta);
     if (bx == en_passant && by == (CHESS_COLOR_WHITE == c ? 2 : 5)) {
-      return 1 == abs(ax - bx) && by == ay + direction;
+      return 1 == abs(ax - bx) && by == ay + direction ? CHESS_MOVE_TAKE_ENPASSANT : CHESS_MOVE_ILLEGAL;
     }
     return bx == ax && (by == ay + direction || ((c == CHESS_COLOR_WHITE ? 6 : 1) == ay && by == ay + direction * 2 && 0 == game->board[ay + direction][ax]));
   } else {
@@ -160,10 +160,11 @@ chess_is_check(chess_game_t *game, chess_color_t color)
   return 0;
 }
 
-int
+chess_move_t
 chess_legal_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
   chess_square_t a, b;
+  chess_move_t res;
 
   a = game->board[ay][ax];
   b = game->board[by][bx];
@@ -178,30 +179,44 @@ chess_legal_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t
 
   switch (chess_piece_from_square(a)) {
   case CHESS_PIECE_PAWN:
-    return pawn_legal(game, ax, ay, bx, by);
+    res = pawn_legal(game, ax, ay, bx, by);
+    break;
   case CHESS_PIECE_BISHOP:
-    return bishop_legal(game->board, ax, ay, bx, by);
+    res = bishop_legal(game->board, ax, ay, bx, by);
+    break;
   case CHESS_PIECE_KNIGHT:
-    return knight_legal(game->board, ax, ay, bx, by);
+    res = knight_legal(game->board, ax, ay, bx, by);
+    break;
   case CHESS_PIECE_ROOK:
-    return rook_legal(game->board, ax, ay, bx, by);
+    res = rook_legal(game->board, ax, ay, bx, by);
+    break;
   case CHESS_PIECE_QUEEN:
-    return queen_legal(game->board, ax, ay, bx, by);
+    res = queen_legal(game->board, ax, ay, bx, by);
+    break;
   case CHESS_PIECE_KING:
-    return king_legal(game, ax, ay, bx, by);
+    res = king_legal(game, ax, ay, bx, by);
+    break;
   default:
     return 0;
   }
+
+  if (CHESS_MOVE_LEGAL == res && 0 != b) {
+    return CHESS_MOVE_TAKE;
+  }
+
+  return res;
 }
 
-int
+chess_move_t
 chess_safe_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
+  chess_move_t move;
   chess_square_t a, b;
   chess_color_t c;
-  int res;
+  int is_check;
 
-  if (!chess_legal_move(game, ax, ay, bx, by)) {
+  move = chess_legal_move(game, ax, ay, bx, by);
+  if (CHESS_MOVE_ILLEGAL == move) {
     return 0;
   }
 
@@ -212,9 +227,9 @@ chess_safe_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t 
   game->board[ay][ax] = 0;
   game->board[by][bx] = a;
 
-  res = !chess_is_check(game, c);
+  is_check = chess_is_check(game, c);
   game->board[ay][ax] = a;
   game->board[by][bx] = b;
 
-  return res;
+  return is_check ? CHESS_MOVE_UNSAFE : move;
 }
