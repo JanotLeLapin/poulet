@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "ai.h"
@@ -75,6 +76,53 @@ ai_brain_forward(ai_brain_t *brain, float *input)
     ai_layer_forward(&brain->layers[i], current_input);
     current_input = brain->layers[i].outputs;
   }
+}
+
+int
+ai_brain_save(ai_brain_t *brain, const char *filename)
+{
+  FILE *f;
+  size_t i;
+  ai_layer_t l;
+
+  f = fopen(filename, "wb");
+
+  fwrite(&brain->layer_count, sizeof(size_t), 1, f);
+  for (i = 0; i < brain->layer_count; i++) {
+    l = brain->layers[i];
+    fwrite(&l.input_size, sizeof(size_t), 1, f);
+    fwrite(&l.output_size, sizeof(size_t), 1, f);
+    fwrite(l.weights, sizeof(float), l.input_size * l.output_size, f);
+    fwrite(l.biases, sizeof(float), l.output_size, f);
+  }
+
+  return 0;
+}
+
+int
+ai_brain_load(ai_brain_t *brain, const char *filename)
+{
+  FILE *f;
+  size_t i;
+  ai_layer_t *l;
+
+  f = fopen(filename, "rb");
+
+  fread(&brain->layer_count, sizeof(size_t), 1, f);
+  brain->layers = malloc(sizeof(ai_layer_t) * brain->layer_count);
+  for (i = 0; i < brain->layer_count; i++) {
+    l = &brain->layers[i];
+    fread(&l->input_size, sizeof(size_t), 1, f);
+    fread(&l->output_size, sizeof(size_t), 1, f);
+    l->weights = malloc(sizeof(float) * l->input_size * l->output_size);
+    l->biases = malloc(sizeof(float) * l->output_size);
+    l->outputs = malloc(sizeof(float) * l->output_size);
+    l->activation = ai_activation_relu;
+    fread(l->weights, sizeof(float), l->input_size * l->output_size, f);
+    fread(l->biases, sizeof(float), l->output_size, f);
+  }
+
+  return 0;
 }
 
 void
