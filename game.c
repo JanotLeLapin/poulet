@@ -120,7 +120,7 @@ queen_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 static chess_move_t
 king_legal(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
-  chess_square_t s;
+  chess_square_t s, rook;
   chess_color_t c;
   char step;
   uint8_t i, can_castle = CHESS_MOVE_CASTLE;
@@ -133,6 +133,12 @@ king_legal(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
   c = chess_color_from_square(s);
   if (abs(bx - ax) == 2 && by == ay && chess_get_castling_rights(game->meta, c) && !chess_is_check(game, c)) {
     step = bx < ax ? -1 : 1;
+    rook = game->board[ay][step == -1 ? 0 : 7];
+
+    if (0 == rook || c != chess_color_from_square(rook) || CHESS_PIECE_ROOK != chess_piece_from_square(rook)) {
+      return CHESS_MOVE_ILLEGAL;
+    }
+
     for (i = 1; i <= 2; i++) {
       if (0 != game->board[ay][ax + step * i]) {
         can_castle = CHESS_MOVE_ILLEGAL;

@@ -239,6 +239,34 @@ test_castle()
   game.board[7][6] = 0;
   ASSERT_INT_EQ(CHESS_MOVE_CASTLE, chess_legal_move(&game, 4, 7, 6, 7));
   ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 2, 7));
+
+  game.board[6][4] = chess_new_square(CHESS_PIECE_ROOK, CHESS_COLOR_BLACK);
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 6, 7));
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 2, 7));
+
+  game.board[6][4] = 0;
+  game.board[6][5] = chess_new_square(CHESS_PIECE_ROOK, CHESS_COLOR_BLACK);
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 6, 7));
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 2, 7));
+
+  game.board[6][5] = 0;
+  game.board[7][7] = 0;
+  game.board[7][6] = chess_new_square(CHESS_PIECE_ROOK, CHESS_COLOR_WHITE);
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 6, 7));
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 2, 7));
+
+  chess_init(&game);
+  game.board[7][5] = 0;
+  game.board[7][6] = 0;
+  game.board[7][7] = 0;
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 6, 7));
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 2, 7));
+
+  game.board[7][3] = 0;
+  game.board[7][2] = 0;
+  game.board[7][1] = 0;
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 6, 7));
+  ASSERT_INT_EQ(CHESS_MOVE_CASTLE, chess_legal_move(&game, 4, 7, 2, 7));
 }
 
 void
