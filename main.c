@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 #include "ai.h"
 #include "game.h"
@@ -101,6 +102,8 @@ main()
   chess_game_t game;
   move_t move;
   char src[3], dst[3];
+
+  srand(time(NULL));
 
   init_chess_brain(&brain_a);
   init_chess_brain(&brain_b);
