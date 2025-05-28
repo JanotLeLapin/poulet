@@ -19,7 +19,7 @@
 
 #define ASSERT_EQ(a, b, fmt) \
   if ((a) != (b)) { \
-    LOG_ERROR("expected '" #b "' to be '" fmt "', found '" fmt "'", a, b); \
+    LOG_ERROR("expected: " #b " to be: " #a " (" fmt "), found: " fmt, a, b); \
     exit(1); \
   }
 
