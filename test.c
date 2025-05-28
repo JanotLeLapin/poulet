@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include "game.h"
 
@@ -31,6 +32,16 @@
     exit(1); \
   }
 
+#define START_UNIT(unit) \
+  const char *unit_name = unit; \
+  struct timespec start, stop; \
+  LOG_INFO("%s: start", unit_name); \
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start)
+
+#define END_UNIT() \
+  clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop); \
+  LOG_INFO("%s: end (took %lfµs)", unit_name, (stop.tv_sec - start.tv_sec) * 1e6 + (stop.tv_nsec - start.tv_nsec) / 1e3)
+
 static inline void
 empty_board(chess_board_t board)
 {
@@ -42,7 +53,7 @@ test_pawn()
 {
   chess_game_t game;
 
-  LOG_INFO("testing pawn");
+  START_UNIT("pawn");
 
   empty_board(game.board);
   game.meta = 0;
@@ -63,6 +74,8 @@ test_pawn()
   game.meta |= 0x01;
   ASSERT_INT_EQ(CHESS_MOVE_TAKE_ENPASSANT, chess_legal_move(&game, 1, 4, 0, 5));
   ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 1, 4, 2, 5));
+
+  END_UNIT();
 }
 
 void
@@ -70,7 +83,7 @@ test_bishop()
 {
   chess_game_t game;
 
-  LOG_INFO("testing bishop");
+  START_UNIT("bishop");
 
   empty_board(game.board);
   game.meta = 0;
@@ -100,6 +113,8 @@ test_bishop()
   ASSERT_INT_EQ(CHESS_MOVE_LEGAL, chess_legal_move(&game, 2, 3, 4, 1));
   ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 2, 3, 7, 1));
   ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 3, 2, 5, 4));
+
+  END_UNIT();
 }
 
 void
@@ -107,7 +122,7 @@ test_knight()
 {
   chess_game_t game;
 
-  LOG_INFO("testing knight");
+  START_UNIT("knight");
 
   empty_board(game.board);
   game.meta = 0;
@@ -125,6 +140,8 @@ test_knight()
 
   game.board[4][4] = chess_new_square(CHESS_PIECE_KNIGHT, CHESS_COLOR_BLACK);
   ASSERT_INT_EQ(CHESS_MOVE_TAKE, chess_legal_move(&game, 2, 3, 4, 4));
+
+  END_UNIT();
 }
 
 void
@@ -132,7 +149,7 @@ test_rook()
 {
   chess_game_t game;
 
-  LOG_INFO("testing rook");
+  START_UNIT("rook");
 
   empty_board(game.board);
   game.meta = 0;
@@ -151,6 +168,8 @@ test_rook()
 
   game.board[6][3] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_WHITE);
   ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 3, 4, 3, 6));
+
+  END_UNIT();
 }
 
 void
@@ -158,7 +177,7 @@ test_check()
 {
   chess_game_t game;
 
-  LOG_INFO("testing check");
+  START_UNIT("check");
 
   empty_board(game.board);
   game.meta = 0;
@@ -174,6 +193,8 @@ test_check()
   game.board[7][2] = chess_new_square(CHESS_PIECE_BISHOP, CHESS_COLOR_WHITE);
   ASSERT(chess_is_check(&game, CHESS_COLOR_WHITE));
   ASSERT(chess_is_check(&game, CHESS_COLOR_BLACK));
+
+  END_UNIT();
 }
 
 void
@@ -181,7 +202,7 @@ test_safe()
 {
   chess_game_t game;
 
-  LOG_INFO("testing safe");
+  START_UNIT("safe");
 
   empty_board(game.board);
   game.meta = 0;
@@ -219,6 +240,8 @@ test_safe()
 
   game.board[4][7] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_BLACK);
   ASSERT_INT_EQ(CHESS_MOVE_TAKE_ENPASSANT, chess_safe_move(&game, 3, 4, 4, 5));
+
+  END_UNIT();
 }
 
 void
@@ -226,7 +249,7 @@ test_castle()
 {
   chess_game_t game;
 
-  LOG_INFO("testing castle");
+  START_UNIT("castle");
 
   chess_init(&game);
   ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 6, 7));
@@ -267,6 +290,8 @@ test_castle()
   game.board[7][1] = 0;
   ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 6, 7));
   ASSERT_INT_EQ(CHESS_MOVE_CASTLE, chess_legal_move(&game, 4, 7, 2, 7));
+
+  END_UNIT();
 }
 
 void
@@ -274,11 +299,13 @@ test_main()
 {
   chess_game_t game;
 
-  LOG_INFO("testing main");
+  START_UNIT("main");
 
   chess_init(&game);
   ASSERT_INT_EQ(CHESS_MOVE_LEGAL, chess_legal_move(&game, 4, 1, 4, 3));
   ASSERT_INT_EQ(CHESS_MOVE_LEGAL, chess_legal_move(&game, 4, 6, 4, 4));
+
+  END_UNIT();
 }
 
 int
