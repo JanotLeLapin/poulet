@@ -214,22 +214,41 @@ chess_safe_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t 
   chess_square_t a, b;
   chess_color_t c;
   int is_check;
+  uint8_t enpassant_y;
 
   move = chess_legal_move(game, ax, ay, bx, by);
   if (CHESS_MOVE_ILLEGAL == move) {
-    return 0;
+    return CHESS_MOVE_ILLEGAL;
   }
 
   a = game->board[ay][ax];
   b = game->board[by][bx];
   c = chess_color_from_square(a);
 
-  game->board[ay][ax] = 0;
-  game->board[by][bx] = a;
-
-  is_check = chess_is_check(game, c);
-  game->board[ay][ax] = a;
-  game->board[by][bx] = b;
+  switch (move) {
+  case CHESS_MOVE_LEGAL:
+  case CHESS_MOVE_TAKE:
+    game->board[ay][ax] = 0;
+    game->board[by][bx] = a;
+    is_check = chess_is_check(game, c);
+    game->board[ay][ax] = a;
+    game->board[by][bx] = b;
+    break;
+  case CHESS_MOVE_TAKE_ENPASSANT:
+    enpassant_y = by + (CHESS_COLOR_WHITE == c ? 1 : -1);
+    b = game->board[enpassant_y][bx];
+    game->board[ay][ax] = 0;
+    game->board[by][bx] = a;
+    game->board[enpassant_y][bx] = 0;
+    is_check = chess_is_check(game, c);
+    game->board[ay][ax] = a;
+    game->board[by][bx] = 0;
+    game->board[enpassant_y][bx] = b;
+    break;
+  case CHESS_MOVE_UNSAFE:
+  case CHESS_MOVE_ILLEGAL:
+    return CHESS_MOVE_ILLEGAL;
+  }
 
   return is_check ? CHESS_MOVE_UNSAFE : move;
 }
