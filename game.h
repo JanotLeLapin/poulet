@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+static const char *LETTERS = "abcdefgh";
+
 typedef enum {
   CHESS_PIECE_PAWN = 1,
   CHESS_PIECE_BISHOP,
@@ -56,6 +58,14 @@ inline static chess_color_t
 chess_color_from_square(chess_square_t square)
 {
   return (chess_color_t) (square >> 3);
+}
+
+inline static void
+chess_pretty_square(char *buf, uint8_t x, uint8_t y)
+{
+  buf[0] = LETTERS[x];
+  buf[1] = 8 - y + 48;
+  buf[2] = '\0';
 }
 
 inline static const char *

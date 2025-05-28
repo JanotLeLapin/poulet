@@ -100,7 +100,7 @@ main()
   ai_brain_t brain_a, brain_b;
   chess_game_t game;
   move_t move;
-  size_t i;
+  char src[3], dst[3];
 
   init_chess_brain(&brain_a);
   init_chess_brain(&brain_b);
@@ -112,10 +112,14 @@ main()
     }
 
     move = predict_next_move(&game, &brain_a, CHESS_COLOR_WHITE);
-    printf("white: x: %d, y: %d to x: %d, y: %d\n", move.src_x, move.src_y, move.dst_x, move.dst_y);
+    chess_pretty_square(src, move.src_x, move.src_y);
+    chess_pretty_square(dst, move.dst_x, move.dst_y);
+    printf("white: %s to %s\n", src, dst);
 
     move = predict_next_move(&game, &brain_a, CHESS_COLOR_BLACK);
-    printf("black: x: %d, y: %d to x: %d, y: %d\n", move.src_x, move.src_y, move.dst_x, move.dst_y);
+    chess_pretty_square(src, move.src_x, move.src_y);
+    chess_pretty_square(dst, move.dst_x, move.dst_y);
+    printf("black: %s to %s\n", src, dst);
   }
 
   ai_brain_free(&brain_a);
