@@ -61,6 +61,7 @@ predict_next_move(chess_game_t *game, ai_brain_t *brain, chess_color_t color)
   float inputs[768];
   scored_move_t scored_moves[4096];
   move_t res;
+  chess_move_t move;
 
   for (i = 0; i < 768; i++) {
     inputs[i] = 0.0f;
@@ -87,7 +88,8 @@ predict_next_move(chess_game_t *game, ai_brain_t *brain, chess_color_t color)
     res.dst_x = dst_index / 8;
     res.dst_y = dst_index % 8;
 
-    if (color == chess_color_from_square(game->board[res.src_y][res.src_x]) && chess_safe_move(game, res.src_x, res.src_y, res.dst_x, res.dst_y)) {
+    move = chess_safe_move(game, res.src_x, res.src_y, res.dst_x, res.dst_y);
+    if (color == chess_color_from_square(game->board[res.src_y][res.src_x]) && CHESS_MOVE_ILLEGAL != move && CHESS_MOVE_UNSAFE != move) {
       break;
     }
   }
