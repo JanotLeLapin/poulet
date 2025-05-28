@@ -115,11 +115,13 @@ main()
     chess_pretty_square(src, move.src_x, move.src_y);
     chess_pretty_square(dst, move.dst_x, move.dst_y);
     printf("white: %s to %s\n", src, dst);
+    chess_do_move(&game, move.src_x, move.src_y, move.dst_x, move.dst_y);
 
     move = predict_next_move(&game, &brain_a, CHESS_COLOR_BLACK);
     chess_pretty_square(src, move.src_x, move.src_y);
     chess_pretty_square(dst, move.dst_x, move.dst_y);
     printf("black: %s to %s\n", src, dst);
+    chess_do_move(&game, move.src_x, move.src_y, move.dst_x, move.dst_y);
   }
 
   ai_brain_free(&brain_a);
