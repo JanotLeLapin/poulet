@@ -97,15 +97,27 @@ predict_next_move(chess_game_t *game, ai_brain_t *brain, chess_color_t color)
 int
 main()
 {
-  ai_brain_t brain;
+  ai_brain_t brain_a, brain_b;
   chess_game_t game;
   move_t move;
+  size_t i;
 
-  init_chess_brain(&brain);
+  init_chess_brain(&brain_a);
+  init_chess_brain(&brain_b);
   chess_init(&game);
 
-  move = predict_next_move(&game, &brain, CHESS_COLOR_WHITE);
-  printf("best valid move: (x: %d, y: %d to x: %d, y: %d)\n", move.src_x, move.src_y, move.dst_x, move.dst_y);
+  for (;;) {
+    if ('q' == fgetc(stdin)) {
+      break;
+    }
 
-  ai_brain_free(&brain);
+    move = predict_next_move(&game, &brain_a, CHESS_COLOR_WHITE);
+    printf("white: x: %d, y: %d to x: %d, y: %d\n", move.src_x, move.src_y, move.dst_x, move.dst_y);
+
+    move = predict_next_move(&game, &brain_a, CHESS_COLOR_BLACK);
+    printf("black: x: %d, y: %d to x: %d, y: %d\n", move.src_x, move.src_y, move.dst_x, move.dst_y);
+  }
+
+  ai_brain_free(&brain_a);
+  ai_brain_free(&brain_b);
 }
