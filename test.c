@@ -241,6 +241,12 @@ test_safe()
   game.board[4][7] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_BLACK);
   ASSERT_INT_EQ(CHESS_MOVE_TAKE_ENPASSANT, chess_safe_move(&game, 3, 4, 4, 5));
 
+  empty_board(game.board);
+  game.board[4][6] = chess_new_square(CHESS_PIECE_QUEEN, CHESS_COLOR_WHITE);
+  game.board[0][4] = chess_new_square(CHESS_PIECE_KING, CHESS_COLOR_BLACK);
+
+  ASSERT_INT_EQ(CHESS_MOVE_UNSAFE, chess_safe_move(&game, 4, 0, 3, 1));
+
   END_UNIT();
 }
 
