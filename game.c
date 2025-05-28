@@ -37,9 +37,13 @@ pawn_legal(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
   chess_square_t s = game->board[ay][ax];
   chess_color_t c = chess_color_from_square(s);
   char direction = c * -2 + 1;
+  int en_passant;
 
   if (0 == game->board[by][bx]) {
-    // implement en passant later
+    en_passant = chess_get_enpassant(game->meta);
+    if (bx == en_passant && by == (CHESS_COLOR_WHITE == c ? 2 : 5)) {
+      return 1 == abs(ax - bx) && by == ay + direction;
+    }
     return bx == ax && (by == ay + direction || ((c == CHESS_COLOR_WHITE ? 6 : 1) == ay && by == ay + direction * 2 && 0 == game->board[ay + direction][ax]));
   } else {
     return c != chess_color_from_square(game->board[by][bx]) && 1 == abs(ax - bx) && by == ay + direction;
