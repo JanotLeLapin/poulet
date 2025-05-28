@@ -207,8 +207,8 @@ test_main()
   LOG_INFO("testing main");
 
   chess_init(&game);
-  ASSERT(chess_legal_move(&game, 4, 2, 4, 4));
-  ASSERT(chess_legal_move(&game, 4, 5, 4, 3));
+  ASSERT(chess_legal_move(&game, 4, 1, 4, 3));
+  ASSERT(chess_legal_move(&game, 4, 6, 4, 4));
 }
 
 int
