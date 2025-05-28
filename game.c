@@ -78,7 +78,7 @@ knight_legal(chess_board_t board, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by
   dx = abs(bx - ax);
   dy = abs(by - ay);
 
-  return 2 == dx && 1 == dy || 2 == dy && 1 == dx;
+  return (2 == dx && 1 == dy) || (2 == dy && 1 == dx);
 }
 
 static int
@@ -124,7 +124,6 @@ king_legal(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 static uint16_t
 find_king(chess_board_t board, chess_color_t color)
 {
-  uint16_t res = 0;
   uint8_t i, j;
 
   for (i = 0; i < 8; i++) {
@@ -141,7 +140,6 @@ find_king(chess_board_t board, chess_color_t color)
 int
 chess_is_check(chess_game_t *game, chess_color_t color)
 {
-  char res = 0;
   uint16_t king_pos;
   uint8_t i, j, kx, ky;
 
