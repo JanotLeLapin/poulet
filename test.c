@@ -198,6 +198,19 @@ test_safe()
   ASSERT(chess_safe_move(&game, 1, 4, 1, 5));
 }
 
+void
+test_main()
+{
+  chess_game_t game;
+  game.meta = 0;
+
+  LOG_INFO("testing main");
+
+  chess_init(&game);
+  ASSERT(chess_legal_move(&game, 4, 2, 4, 4));
+  ASSERT(chess_legal_move(&game, 4, 5, 4, 3));
+}
+
 int
 main()
 {
@@ -208,6 +221,8 @@ main()
 
   test_check();
   test_safe();
+
+  test_main();
 
   LOG_INFO("successfully ran test cases");
 }
