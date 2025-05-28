@@ -190,12 +190,13 @@ test_safe()
   game.board[4][1] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_WHITE);
   game.board[4][4] = chess_new_square(CHESS_PIECE_ROOK, CHESS_COLOR_BLACK);
   game.board[4][7] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_WHITE);
-  ASSERT(chess_safe_move(&game, 7, 4, 7, 3));
-  ASSERT(!chess_safe_move(&game, 1, 4, 1, 3));
+  ASSERT_INT_EQ(CHESS_MOVE_LEGAL, chess_safe_move(&game, 7, 4, 7, 3));
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_safe_move(&game, 7, 4, 7, 2));
+  ASSERT_INT_EQ(CHESS_MOVE_UNSAFE, chess_safe_move(&game, 1, 4, 1, 3));
 
   game.board[4][1] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_BLACK);
-  ASSERT(chess_safe_move(&game, 7, 4, 7, 3));
-  ASSERT(chess_safe_move(&game, 1, 4, 1, 5));
+  ASSERT_INT_EQ(CHESS_MOVE_LEGAL, chess_safe_move(&game, 7, 4, 7, 3));
+  ASSERT_INT_EQ(CHESS_MOVE_LEGAL, chess_safe_move(&game, 1, 4, 1, 5));
 }
 
 void
