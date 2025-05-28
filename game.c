@@ -299,11 +299,14 @@ chess_do_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by
   chess_move_t move;
   uint8_t enpassant_y, rook_src_x, rook_dest_x;
 
+  if (CHESS_PIECE_KING == chess_piece_from_square(game->board[ay][ax])) {
+    game->meta = game->meta & ~(0x01 << chess_color_from_square(game->board[ay][ax] + 4));
+  }
+
   move = chess_safe_move(game, ax, ay, bx, by);
   switch (move) {
   case CHESS_MOVE_LEGAL:
   case CHESS_MOVE_TAKE:
-    // DISABLE CASTLING RIGHTS IF KING MOVED
     game->board[by][bx] = game->board[ay][ax];
     game->board[ay][ax] = 0;
     break;
