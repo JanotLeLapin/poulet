@@ -41,11 +41,11 @@ void
 test_pawn()
 {
   chess_game_t game;
-  game.meta = 0;
 
   LOG_INFO("testing pawn");
 
   empty_board(game.board);
+  game.meta = 0;
   game.board[5][0] = chess_new_square(CHESS_PIECE_KNIGHT, CHESS_COLOR_BLACK);
   game.board[6][0] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_WHITE);
   game.board[6][1] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_WHITE);
@@ -60,7 +60,7 @@ test_pawn()
   game.board[5][0] = 0;
   game.board[4][1] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_BLACK);
   game.board[4][0] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_WHITE);
-  game.meta = 1;
+  game.meta |= 0x01;
   ASSERT_INT_EQ(CHESS_MOVE_TAKE_ENPASSANT, chess_legal_move(&game, 1, 4, 0, 5));
   ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 1, 4, 2, 5));
 }
@@ -69,11 +69,11 @@ void
 test_bishop()
 {
   chess_game_t game;
-  game.meta = 0;
 
   LOG_INFO("testing bishop");
 
   empty_board(game.board);
+  game.meta = 0;
   game.board[3][2] = chess_new_square(CHESS_PIECE_BISHOP, CHESS_COLOR_BLACK);
   ASSERT_INT_EQ(CHESS_MOVE_LEGAL, chess_legal_move(&game, 2, 3, 4, 5));
   ASSERT_INT_EQ(CHESS_MOVE_LEGAL, chess_legal_move(&game, 2, 3, 3, 4));
@@ -106,11 +106,11 @@ void
 test_knight()
 {
   chess_game_t game;
-  game.meta = 0;
 
   LOG_INFO("testing knight");
 
   empty_board(game.board);
+  game.meta = 0;
   game.board[3][2] = chess_new_square(CHESS_PIECE_KNIGHT, CHESS_COLOR_WHITE);
   ASSERT_INT_EQ(CHESS_MOVE_LEGAL, chess_legal_move(&game, 2, 3, 0, 2));
   ASSERT_INT_EQ(CHESS_MOVE_LEGAL, chess_legal_move(&game, 2, 3, 0, 4));
@@ -131,11 +131,11 @@ void
 test_rook()
 {
   chess_game_t game;
-  game.meta = 0;
 
   LOG_INFO("testing rook");
 
   empty_board(game.board);
+  game.meta = 0;
   game.board[4][3] = chess_new_square(CHESS_PIECE_ROOK, CHESS_COLOR_WHITE);
   ASSERT_INT_EQ(CHESS_MOVE_LEGAL, chess_legal_move(&game, 3, 4, 3, 7));
   ASSERT_INT_EQ(CHESS_MOVE_LEGAL, chess_legal_move(&game, 3, 4, 2, 4));
@@ -157,11 +157,11 @@ void
 test_check()
 {
   chess_game_t game;
-  game.meta = 0;
 
   LOG_INFO("testing check");
 
   empty_board(game.board);
+  game.meta = 0;
   game.board[2][2] = chess_new_square(CHESS_PIECE_KING, CHESS_COLOR_WHITE);
   game.board[4][5] = chess_new_square(CHESS_PIECE_KING, CHESS_COLOR_BLACK);
   ASSERT(!chess_is_check(&game, CHESS_COLOR_WHITE));
@@ -180,11 +180,11 @@ void
 test_safe()
 {
   chess_game_t game;
-  game.meta = 0;
 
   LOG_INFO("testing safe");
 
   empty_board(game.board);
+  game.meta = 0;
   game.board[4][0] = chess_new_square(CHESS_PIECE_KING, CHESS_COLOR_WHITE);
   game.board[7][7] = chess_new_square(CHESS_PIECE_KING, CHESS_COLOR_BLACK);
   game.board[4][1] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_WHITE);
@@ -214,7 +214,7 @@ test_safe()
   game.board[4][3] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_BLACK);
   game.board[4][4] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_WHITE);
   game.board[4][7] = chess_new_square(CHESS_PIECE_ROOK, CHESS_COLOR_WHITE);
-  game.meta = (4 << 1) | 1;
+  game.meta |= (4 << 1) | 1;
   ASSERT_INT_EQ(CHESS_MOVE_UNSAFE, chess_safe_move(&game, 3, 4, 4, 5));
 
   game.board[4][7] = chess_new_square(CHESS_PIECE_PAWN, CHESS_COLOR_BLACK);
@@ -225,7 +225,6 @@ void
 test_main()
 {
   chess_game_t game;
-  game.meta = 0;
 
   LOG_INFO("testing main");
 

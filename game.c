@@ -8,6 +8,8 @@ chess_init(chess_game_t *game)
 {
   uint8_t i, j;
 
+  game->meta = 0x03 << 4;
+
   for (i = 0; i < 2; i++) {
     for (j = 0; j < 2; j++) {
       game->board[i * 7][j * 7] = chess_new_square(CHESS_PIECE_ROOK, (chess_color_t) i);
