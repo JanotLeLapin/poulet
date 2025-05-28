@@ -9,6 +9,13 @@ typedef struct {
   float score;
 } scored_move_t;
 
+typedef struct {
+  uint8_t src_x;
+  uint8_t src_y;
+  uint8_t dst_x;
+  uint8_t dst_y;
+} move_t;
+
 int
 compare_moves(const void *a, const void *b)
 {
@@ -46,28 +53,24 @@ encode_chess_board(chess_board_t board, float *inputs)
   }
 }
 
-int
-main()
+move_t
+predict_next_move(chess_game_t *game, ai_brain_t *brain, chess_color_t color)
 {
-  ai_brain_t brain;
-  chess_game_t game;
+  size_t i, src_index, dst_index;
   float inputs[768];
-  size_t i, best_move_index, src_index, dst_index;
   scored_move_t scored_moves[4096];
-  uint8_t src_x, src_y, dst_x, dst_y;
+  move_t res;
 
   for (i = 0; i < 768; i++) {
     inputs[i] = 0.0f;
   }
 
-  init_chess_brain(&brain);
-  chess_init(&game);
-  encode_chess_board(game.board, inputs);
-  ai_brain_forward(&brain, inputs);
+  encode_chess_board(game->board, inputs);
+  ai_brain_forward(brain, inputs);
 
   for (i = 0; i < 4096; i++) {
     scored_moves[i].index = i;
-    scored_moves[i].score = brain.layers[2].outputs[i];
+    scored_moves[i].score = brain->layers[2].outputs[i];
   }
 
   qsort(scored_moves, 4096, sizeof(scored_move_t), compare_moves);
@@ -78,17 +81,31 @@ main()
     src_index = move_index / 64;
     dst_index = move_index % 64;
 
-    src_x = src_index / 8;
-    src_y = src_index % 8;
-    dst_x = dst_index / 8;
-    dst_y = dst_index % 8;
+    res.src_x = src_index / 8;
+    res.src_y = src_index % 8;
+    res.dst_x = dst_index / 8;
+    res.dst_y = dst_index % 8;
 
-    if (chess_safe_move(&game, src_x, src_y, dst_x, dst_y)) {
+    if (color == chess_color_from_square(game->board[res.src_y][res.src_x]) && chess_safe_move(game, res.src_x, res.src_y, res.dst_x, res.dst_y)) {
       break;
     }
   }
 
-  printf("best valid move: (x: %d, y: %d to x: %d, y: %d)\n", src_x, src_y, dst_x, dst_y);
+  return res;
+}
+
+int
+main()
+{
+  ai_brain_t brain;
+  chess_game_t game;
+  move_t move;
+
+  init_chess_brain(&brain);
+  chess_init(&game);
+
+  move = predict_next_move(&game, &brain, CHESS_COLOR_WHITE);
+  printf("best valid move: (x: %d, y: %d to x: %d, y: %d)\n", move.src_x, move.src_y, move.dst_x, move.dst_y);
 
   ai_brain_free(&brain);
 }
