@@ -9,6 +9,7 @@
 
 #define POPULATION_SIZE 128
 #define GROUP_SIZE 8
+#define ELITE_SIZE 4
 
 typedef struct {
   size_t index;
@@ -246,7 +247,7 @@ main(int argc, char **argv)
   stop_gen = argc <= 2 ? start_gen + 10 : atoi(argv[2]);
 
   if (0 < start_gen) {
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < ELITE_SIZE; i++) {
       snprintf(filename, sizeof(filename), "models/%d-%ld.model", start_gen, i);
       printf("loading brain: %s\n", filename);
       ai_brain_load(&brains[i], filename);
@@ -254,7 +255,7 @@ main(int argc, char **argv)
 
     printf("loaded gen %d brains\n", start_gen);
 
-    for (i = 8; i < POPULATION_SIZE; i++) {
+    for (i = ELITE_SIZE; i < POPULATION_SIZE; i++) {
       do {
         parent_a = rand() % 8;
         parent_b = rand() % 8;
@@ -298,15 +299,15 @@ main(int argc, char **argv)
 
     start_gen++;
 
-    for (i = 0; i < 8; i++) {
-      snprintf(filename, 32, "models/%d-%ld.model", start_gen, i);
+    for (i = 0; i < ELITE_SIZE; i++) {
+      snprintf(filename, sizeof(filename), "models/%d-%ld.model", start_gen, i);
       printf("saving %ld\n", ranked_brains[i].index);
       ai_brain_save(&brains[ranked_brains[i].index], filename);
     }
 
     printf("saved elite brains\n");
 
-    for (i = 8; i < POPULATION_SIZE; i++) {
+    for (i = ELITE_SIZE; i < POPULATION_SIZE; i++) {
       do {
         parent_a = rand() % 8;
         parent_b = rand() % 8;
