@@ -257,8 +257,8 @@ main(int argc, char **argv)
 
     for (i = ELITE_SIZE; i < POPULATION_SIZE; i++) {
       do {
-        parent_a = rand() % 8;
-        parent_b = rand() % 8;
+        parent_a = rand() % ELITE_SIZE;
+        parent_b = rand() % ELITE_SIZE;
       } while (parent_a != parent_b);
       init_chess_brain(&brains[i]);
       ai_brain_offspring(&brains[parent_a], &brains[parent_b], &brains[i]);
@@ -309,8 +309,8 @@ main(int argc, char **argv)
 
     for (i = ELITE_SIZE; i < POPULATION_SIZE; i++) {
       do {
-        parent_a = rand() % 8;
-        parent_b = rand() % 8;
+        parent_a = rand() % ELITE_SIZE;
+        parent_b = rand() % ELITE_SIZE;
       } while (parent_a != parent_b);
       ai_brain_offspring(&brains[ranked_brains[parent_a].index], &brains[ranked_brains[parent_b].index], &brains[ranked_brains[i].index]);
     }
