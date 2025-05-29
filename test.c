@@ -247,6 +247,11 @@ test_safe()
 
   ASSERT_INT_EQ(CHESS_MOVE_UNSAFE, chess_safe_move(&game, 4, 0, 3, 1));
 
+  empty_board(game.board);
+  game.board[0][3] = chess_new_square(CHESS_PIECE_KING, CHESS_COLOR_BLACK);
+  game.board[2][4] = chess_new_square(CHESS_PIECE_BISHOP, CHESS_COLOR_WHITE);
+  ASSERT_INT_EQ(CHESS_MOVE_UNSAFE, chess_safe_move(&game, 3, 0, 3, 1));
+
   END_UNIT();
 }
 
