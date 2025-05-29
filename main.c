@@ -217,7 +217,7 @@ training_thread(void *arg)
 
 
       data->results[i][j] = game_loop(&game, &a, &b);
-      printf("game over (%ld,%ld: %d)\n", i, j, data->results[i][j]);
+      printf("game over (%ld,%ld: %d)\n", i + data->offset * GROUP_SIZE, j + data->offset * GROUP_SIZE, data->results[i][j]);
     }
   }
 
@@ -242,36 +242,41 @@ main()
     data[i].brains = brains;
     data[i].offset = i;
     memset(data[i].results, 0, 8 * 8 * sizeof(int));
-    pthread_create(&threads[i], NULL, training_thread, &data);
-    break;
+    pthread_create(&threads[i], NULL, training_thread, &data[i]);
   }
 
   for (i = 0; i < POPULATION_SIZE / GROUP_SIZE; i++) {
     pthread_join(threads[i], NULL);
-    break;
   }
 
-  printf("done with group!\n");
+  printf("done with groups!\n");
 
-  memset(ranked_brains, 0, POPULATION_SIZE * sizeof(ranked_brain_t));
   for (i = 0; i < POPULATION_SIZE / GROUP_SIZE; i++) {
     for (j = 0; j < GROUP_SIZE; j++) {
+      ranked_brains[j + i * GROUP_SIZE].index = j + i * GROUP_SIZE;
+      ranked_brains[j + i * GROUP_SIZE].score = 0;
       for (k = 0; k < GROUP_SIZE; k++) {
-        ranked_brains[j + i * GROUP_SIZE].index = j + i * GROUP_SIZE;
         ranked_brains[j + i * GROUP_SIZE].score += data[i].results[j][k];
         ranked_brains[j + i * GROUP_SIZE].score += -data[i].results[k][j];
       }
     }
-    break;
+  }
+
+  printf("unranked\n");
+  for (i = 0; i < POPULATION_SIZE; i++) {
+    printf("brain: %ld, rank: %d\n", ranked_brains[i].index, ranked_brains[i].score);
   }
 
   qsort(ranked_brains, POPULATION_SIZE, sizeof(ranked_brain_t), compare_ranked_brains);
 
-  printf("highest score: %d\n", ranked_brains[0].score);
-  printf("lowest score: %d\n", ranked_brains[GROUP_SIZE - 1].score);
+  printf("ranked\n");
+  for (i = 0; i < POPULATION_SIZE; i++) {
+    printf("brain: %ld, rank: %d\n", ranked_brains[i].index, ranked_brains[i].score);
+  }
 
   for (i = 0; i < 8; i++) {
     snprintf(filename, 32, "models/0-%ld.model", i);
+    printf("saving %ld\n", ranked_brains[i].index);
     ai_brain_save(&brains[ranked_brains[i].index], filename);
   }
 
