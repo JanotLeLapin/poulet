@@ -289,6 +289,8 @@ main(int argc, char **argv)
 
     qsort(ranked_brains, POPULATION_SIZE, sizeof(ranked_brain_t), compare_ranked_brains);
 
+    start_gen++;
+
     for (i = 0; i < 8; i++) {
       snprintf(filename, 32, "models/%d-%ld.model", start_gen, i);
       printf("saving %ld\n", ranked_brains[i].index);
@@ -304,8 +306,6 @@ main(int argc, char **argv)
       } while (parent_a != parent_b);
       ai_brain_offspring(&brains[ranked_brains[parent_a].index], &brains[ranked_brains[parent_b].index], &brains[ranked_brains[i].index]);
     }
-
-    start_gen++;
   }
 
   printf("done\n");
