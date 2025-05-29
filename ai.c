@@ -61,25 +61,29 @@ ai_brain_init(ai_brain_t *brain, size_t layer_count)
   return brain->layers == 0 ? -1 : 0;
 }
 
+static void
+crossover(float *dst, float *a, float *b, size_t size)
+{
+  size_t i;
+  float alpha;
+
+  for (i = 0; i < size; i++) {
+    alpha = 0.4f + ((float) rand() / RAND_MAX) * 0.2f;
+    dst[i] = alpha * a[i] + (1 - alpha) * b[i];
+
+    if (((float) rand() / RAND_MAX) < 0.01f) {
+      dst[i] += 0.1f * gaussian_noise();
+    }
+  }
+}
+
 void
 ai_layer_offspring(ai_layer_t *child, ai_layer_t *a, ai_layer_t *b)
 {
   size_t i;
 
-  for (i = 0; i < child->input_size * child->output_size; i++) {
-    child->weights[i] = ((rand() % 2) == 0 ? a : b)->weights[i];
-    if (((float) rand() / RAND_MAX) < 0.01f) {
-      child->weights[i] += 0.1f * gaussian_noise();
-    }
-  }
-
-  for (i = 0; i < child->output_size; i++) {
-    child->biases[i] = ((rand() % 2) == 0 ? a : b)->biases[i];
-    if (((float) rand() / RAND_MAX) < 0.01f) {
-      child->biases[i] += 0.1f * gaussian_noise();
-    }
-  }
-
+  crossover(child->weights, a->weights, b->weights, child->input_size * child->output_size);
+  crossover(child->biases, a->biases, b->biases, child->output_size);
   child->activation = a->activation;
 }
 
