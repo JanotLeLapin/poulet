@@ -65,8 +65,12 @@ init_chess_brain(ai_brain_t *brain)
 void
 encode_chess_board(chess_board_t board, float *inputs)
 {
-  uint8_t i, j;
+  size_t i, j;
   chess_square_t s;
+
+  for (i = 0; i < 768; i++) {
+    inputs[i] = 0.0f;
+  }
 
   for (i = 0; i < 8; i++) {
     for (j = 0; j < 8; j++) {
@@ -87,10 +91,6 @@ predict_next_move(move_t *res, chess_game_t *game, ai_brain_t *brain, chess_colo
   float inputs[768];
   scored_move_t scored_moves[4096];
   chess_move_t move;
-
-  for (i = 0; i < 768; i++) {
-    inputs[i] = 0.0f;
-  }
 
   encode_chess_board(game->board, inputs);
   ai_brain_forward(brain, inputs);
