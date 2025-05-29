@@ -4,6 +4,16 @@
 
 #include "ai.h"
 
+static float
+gaussian_noise()
+{
+  float u1 = ((float) rand() + 1.0f) / ((float) RAND_MAX + 2.0f);
+  float u2 = ((float) rand() + 1.0f) / ((float) RAND_MAX + 2.0f);
+
+  return sqrtf(-2.0f * logf(u1)) * cosf(2.0f * M_PI * u2);
+}
+
+
 int
 ai_layer_init(ai_layer_t *layer, size_t input_size, size_t output_size, activation_func activation)
 {
@@ -49,6 +59,38 @@ ai_brain_init(ai_brain_t *brain, size_t layer_count)
   brain->layers = malloc(sizeof(ai_layer_t) * layer_count);
 
   return brain->layers == 0 ? -1 : 0;
+}
+
+void
+ai_layer_offspring(ai_layer_t *child, ai_layer_t *a, ai_layer_t *b)
+{
+  size_t i;
+
+  for (i = 0; i < child->input_size * child->output_size; i++) {
+    child->weights[i] = ((rand() % 2) == 0 ? a : b)->weights[i];
+    if (((float) rand() / RAND_MAX) < 0.01f) {
+      child->weights[i] += 0.1f * gaussian_noise();
+    }
+  }
+
+  for (i = 0; i < child->output_size; i++) {
+    child->biases[i] = ((rand() % 2) == 0 ? a : b)->biases[i];
+    if (((float) rand() / RAND_MAX) < 0.01f) {
+      child->biases[i] += 0.1f * gaussian_noise();
+    }
+  }
+
+  child->activation = a->activation;
+}
+
+void
+ai_brain_offspring(ai_brain_t *a, ai_brain_t *b, ai_brain_t *child)
+{
+  size_t i;
+
+  for (i = 0; i < child->layer_count; i++) {
+    ai_layer_offspring(&child->layers[i], &a->layers[i], &b->layers[i]);
+  }
 }
 
 void

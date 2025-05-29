@@ -19,6 +19,9 @@ typedef struct {
 int ai_layer_init(ai_layer_t *layer, size_t input_size, size_t output_size, activation_func activation);
 int ai_brain_init(ai_brain_t *brain, size_t layer_count);
 
+void ai_layer_offspring(ai_layer_t *child, ai_layer_t *a, ai_layer_t *b);
+void ai_brain_offspring(ai_brain_t *a, ai_brain_t *b, ai_brain_t *child);
+
 void ai_layer_forward(ai_layer_t *layer, float *input);
 void ai_brain_forward(ai_brain_t *brain, float *input);
 
