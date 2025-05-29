@@ -300,7 +300,15 @@ chess_do_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by
   uint8_t enpassant_y, rook_src_x, rook_dest_x;
 
   if (CHESS_PIECE_KING == chess_piece_from_square(game->board[ay][ax])) {
-    game->meta = game->meta & ~(0x01 << chess_color_from_square(game->board[ay][ax] + 4));
+    game->meta = game->meta & ~(0x01 << (5 + chess_color_from_square(game->board[ay][ax])));
+  }
+
+  if (-1 != chess_get_enpassant(game->meta) && chess_color_from_square(game->board[ay][ax]) == ((game->meta >> 1) & 0x01)) {
+    game->meta = game->meta & ~(0x1F);
+  }
+
+  if (CHESS_PIECE_PAWN == chess_piece_from_square(game->board[ay][ax]) && 2 == abs(ay - by)) {
+    game->meta = (game->meta & (~0x1F)) | 0x01 | (chess_color_from_square(game->board[ay][ax]) << 1) | (ax << 2);
   }
 
   move = chess_safe_move(game, ax, ay, bx, by);

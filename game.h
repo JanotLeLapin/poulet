@@ -101,13 +101,13 @@ chess_stringify_color(chess_color_t color)
 inline static int
 chess_get_enpassant(chess_meta_t meta)
 {
-  return (0x01 == (meta & 0x01)) ? (meta >> 1) & 0x07 : -1;
+  return (0x01 == (meta & 0x01)) ? (meta >> 2) & 0x07 : -1;
 }
 
 inline static int
 chess_get_castling_rights(chess_meta_t meta, chess_color_t color)
 {
-  return 0 != (meta & 0x01 << (color + 4));
+  return 0 != (meta & 0x01 << (color + 5));
 }
 
 void chess_init(chess_game_t *game);
