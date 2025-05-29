@@ -131,6 +131,7 @@ game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
   move_t move;
   chess_move_t move_data;
   uint8_t piece_value, until_stalemate = 0;
+  size_t total_moves = 0;
   // char src[3], dst[3];
 
   for (;;) {
@@ -193,6 +194,12 @@ game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
       }
 
       chess_do_move(game, move.src_x, move.src_y, move.dst_x, move.dst_y);
+    }
+
+    total_moves += 2;
+    if (total_moves > 2048) {
+      printf("exceeded max moves\n");
+      return 0;
     }
   }
 }
