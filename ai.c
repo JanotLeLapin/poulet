@@ -138,6 +138,8 @@ ai_brain_save(ai_brain_t *brain, const char *filename)
     fwrite(l.biases, sizeof(float), l.output_size, f);
   }
 
+  fclose(f);
+
   return 0;
 }
 
@@ -163,6 +165,8 @@ ai_brain_load(ai_brain_t *brain, const char *filename)
     fread(l->weights, sizeof(float), l->input_size * l->output_size, f);
     fread(l->biases, sizeof(float), l->output_size, f);
   }
+
+  fclose(f);
 
   return 0;
 }
