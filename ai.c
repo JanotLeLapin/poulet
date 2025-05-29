@@ -18,7 +18,7 @@ gaussian_noise()
 
 
 int
-ai_layer_init(ai_layer_t *layer, size_t input_size, size_t output_size, activation_func activation)
+ai_layer_init(ai_layer_t *layer, size_t input_size, size_t output_size, ai_activation_t activation)
 {
   float scale;
   size_t i;
@@ -115,7 +115,12 @@ ai_layer_forward(ai_layer_t *layer, float *input)
     for (j = 0; j < layer->input_size; j++) {
       sum += layer->weights[i * layer->input_size + j] * input[j];
     }
-    layer->outputs[i] = layer->activation(sum);
+
+    switch (layer->activation) {
+    case AI_ACTIVATION_RELU:
+      layer->outputs[i] = sum > 0 ? sum : 0;
+      break;
+    }
   }
 }
 
@@ -143,6 +148,7 @@ ai_brain_save(ai_brain_t *brain, const char *filename)
   fwrite(&brain->layer_count, sizeof(size_t), 1, f);
   for (i = 0; i < brain->layer_count; i++) {
     l = brain->layers[i];
+    fwrite(&l.activation, sizeof(ai_activation_t), 1, f);
     fwrite(&l.input_size, sizeof(size_t), 1, f);
     fwrite(&l.output_size, sizeof(size_t), 1, f);
     fwrite(l.weights, sizeof(float), l.input_size * l.output_size, f);
@@ -167,12 +173,12 @@ ai_brain_load(ai_brain_t *brain, const char *filename)
   brain->layers = malloc(sizeof(ai_layer_t) * brain->layer_count);
   for (i = 0; i < brain->layer_count; i++) {
     l = &brain->layers[i];
+    fread(&l->activation, sizeof(ai_activation_t), 1, f);
     fread(&l->input_size, sizeof(size_t), 1, f);
     fread(&l->output_size, sizeof(size_t), 1, f);
     l->weights = malloc(sizeof(float) * l->input_size * l->output_size);
     l->biases = malloc(sizeof(float) * l->output_size);
     l->outputs = malloc(sizeof(float) * l->output_size);
-    l->activation = ai_activation_relu;
     fread(l->weights, sizeof(float), l->input_size * l->output_size, f);
     fread(l->biases, sizeof(float), l->output_size, f);
   }
