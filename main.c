@@ -225,62 +225,90 @@ training_thread(void *arg)
 }
 
 int
-main()
+main(int argc, char **argv)
 {
+  int start_gen, stop_gen;
   ai_brain_t brains[POPULATION_SIZE];
   pthread_t threads[POPULATION_SIZE / GROUP_SIZE];
   thread_data_t data[POPULATION_SIZE / GROUP_SIZE];
   ranked_brain_t ranked_brains[POPULATION_SIZE];
-  size_t i, j, k;
+  size_t i, j, k, parent_a, parent_b;
   char filename[32];
 
-  for (i = 0; i < POPULATION_SIZE; i++) {
-    init_chess_brain(&brains[i]);
-  }
+  start_gen = argc <= 1 ? 0 : atoi(argv[1]);
+  stop_gen = argc <= 2 ? start_gen + 10 : atoi(argv[2]);
 
-  for (i = 0; i < POPULATION_SIZE / GROUP_SIZE; i++) {
-    data[i].brains = brains;
-    data[i].offset = i;
-    memset(data[i].results, 0, 8 * 8 * sizeof(int));
-    pthread_create(&threads[i], NULL, training_thread, &data[i]);
-  }
+  if (0 < start_gen) {
+    for (i = 0; i < 8; i++) {
+      snprintf(filename, sizeof(filename), "models/%d-%ld.model", start_gen, i);
+      printf("loading brain: %s\n", filename);
+      ai_brain_load(&brains[i], filename);
+    }
 
-  for (i = 0; i < POPULATION_SIZE / GROUP_SIZE; i++) {
-    pthread_join(threads[i], NULL);
-  }
+    printf("loaded gen %d brains\n", start_gen);
 
-  printf("done with groups!\n");
-
-  for (i = 0; i < POPULATION_SIZE / GROUP_SIZE; i++) {
-    for (j = 0; j < GROUP_SIZE; j++) {
-      ranked_brains[j + i * GROUP_SIZE].index = j + i * GROUP_SIZE;
-      ranked_brains[j + i * GROUP_SIZE].score = 0;
-      for (k = 0; k < GROUP_SIZE; k++) {
-        ranked_brains[j + i * GROUP_SIZE].score += data[i].results[j][k];
-        ranked_brains[j + i * GROUP_SIZE].score += -data[i].results[k][j];
-      }
+    for (i = 8; i < POPULATION_SIZE; i++) {
+      do {
+        parent_a = rand() % 8;
+        parent_b = rand() % 8;
+      } while (parent_a != parent_b);
+      init_chess_brain(&brains[i]);
+      ai_brain_offspring(&brains[parent_a], &brains[parent_b], &brains[i]);
+    }
+  } else {
+    for (i = 0; i < POPULATION_SIZE; i++) {
+      init_chess_brain(&brains[i]);
     }
   }
 
-  printf("unranked\n");
-  for (i = 0; i < POPULATION_SIZE; i++) {
-    printf("brain: %ld, rank: %d\n", ranked_brains[i].index, ranked_brains[i].score);
+  while (start_gen < stop_gen) {
+    printf("-- GENERATION %d/%d --\n", start_gen, stop_gen);
+    for (i = 0; i < POPULATION_SIZE / GROUP_SIZE; i++) {
+      data[i].brains = brains;
+      data[i].offset = i;
+      memset(data[i].results, 0, 8 * 8 * sizeof(int));
+      pthread_create(&threads[i], NULL, training_thread, &data[i]);
+    }
+
+    for (i = 0; i < POPULATION_SIZE / GROUP_SIZE; i++) {
+      pthread_join(threads[i], NULL);
+    }
+
+    printf("done with groups!\n");
+
+    for (i = 0; i < POPULATION_SIZE / GROUP_SIZE; i++) {
+      for (j = 0; j < GROUP_SIZE; j++) {
+        ranked_brains[j + i * GROUP_SIZE].index = j + i * GROUP_SIZE;
+        ranked_brains[j + i * GROUP_SIZE].score = 0;
+        for (k = 0; k < GROUP_SIZE; k++) {
+          ranked_brains[j + i * GROUP_SIZE].score += data[i].results[j][k];
+          ranked_brains[j + i * GROUP_SIZE].score += -data[i].results[k][j];
+        }
+      }
+    }
+
+    qsort(ranked_brains, POPULATION_SIZE, sizeof(ranked_brain_t), compare_ranked_brains);
+
+    for (i = 0; i < 8; i++) {
+      snprintf(filename, 32, "models/%d-%ld.model", start_gen, i);
+      printf("saving %ld\n", ranked_brains[i].index);
+      ai_brain_save(&brains[ranked_brains[i].index], filename);
+    }
+
+    printf("saved elite brains\n");
+
+    for (i = 8; i < POPULATION_SIZE; i++) {
+      do {
+        parent_a = rand() % 8;
+        parent_b = rand() % 8;
+      } while (parent_a != parent_b);
+      ai_brain_offspring(&brains[ranked_brains[parent_a].index], &brains[ranked_brains[parent_b].index], &brains[ranked_brains[i].index]);
+    }
+
+    start_gen++;
   }
 
-  qsort(ranked_brains, POPULATION_SIZE, sizeof(ranked_brain_t), compare_ranked_brains);
-
-  printf("ranked\n");
-  for (i = 0; i < POPULATION_SIZE; i++) {
-    printf("brain: %ld, rank: %d\n", ranked_brains[i].index, ranked_brains[i].score);
-  }
-
-  for (i = 0; i < 8; i++) {
-    snprintf(filename, 32, "models/0-%ld.model", i);
-    printf("saving %ld\n", ranked_brains[i].index);
-    ai_brain_save(&brains[ranked_brains[i].index], filename);
-  }
-
-  printf("saved brains\n");
+  printf("done\n");
 
   for (i = 0; i < POPULATION_SIZE; i++) {
     ai_brain_free(&brains[i]);
