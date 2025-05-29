@@ -4,6 +4,9 @@
 
 #include "ai.h"
 
+#define BURST_CHANCE 0.05f
+#define BURST_AMPLITUDE 0.5f
+
 static float
 gaussian_noise()
 {
@@ -65,14 +68,18 @@ static void
 crossover(float *dst, float *a, float *b, size_t size)
 {
   size_t i;
-  float alpha;
+  float alpha, r;
 
   for (i = 0; i < size; i++) {
     alpha = 0.4f + ((float) rand() / RAND_MAX) * 0.2f;
     dst[i] = alpha * a[i] + (1 - alpha) * b[i];
 
-    if (((float) rand() / RAND_MAX) < 0.01f) {
+    r = ((float) rand() / RAND_MAX) < 0.01f;
+
+    if (r < 0.01f) {
       dst[i] += 0.1f * gaussian_noise();
+    } else if (r < 0.01 + BURST_CHANCE) {
+      dst[i] += BURST_AMPLITUDE * gaussian_noise();
     }
   }
 }
