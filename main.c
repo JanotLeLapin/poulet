@@ -60,7 +60,7 @@ init_chess_brain(ai_brain_t *brain)
   ai_brain_init(brain, 3);
   ai_layer_init(&brain->layers[0], 768, 1024, (ai_activation_t) { .type = AI_ACTIVATION_RELU });
   ai_layer_init(&brain->layers[1], 1024, 512, (ai_activation_t) { .type = AI_ACTIVATION_RELU });
-  ai_layer_init(&brain->layers[2], 512, 4096, (ai_activation_t) { .type = AI_ACTIVATION_SOFTMAX, .data.softmax.temperature = 0.6f });
+  ai_layer_init(&brain->layers[2], 512, 4096, (ai_activation_t) { .type = AI_ACTIVATION_NONE });
 }
 
 void
@@ -85,16 +85,41 @@ encode_chess_board(chess_board_t board, float *inputs)
   }
 }
 
+static inline void
+move_from_index(move_t *res, size_t idx)
+{
+  size_t src_index, dst_index;
+
+  src_index = idx / 64;
+  dst_index = idx % 64;
+
+  res->src_x = src_index / 8;
+  res->src_y = src_index % 8;
+  res->dst_x = dst_index / 8;
+  res->dst_y = dst_index % 8;
+}
+
 int
 predict_next_move(move_t *res, chess_game_t *game, ai_brain_t *brain, chess_color_t color)
 {
   size_t i, src_index, dst_index;
   float inputs[768];
+  move_t tmp;
   scored_move_t scored_moves[4096];
   chess_move_t move;
 
   encode_chess_board(game->board, inputs);
   ai_brain_forward(brain, inputs);
+
+  for (i = 0; i < brain->layers[2].output_size; i++) {
+    move_from_index(&tmp, i);
+    move = chess_safe_move(game, tmp.src_x, tmp.src_y, tmp.dst_x, tmp.dst_y);
+    if (color != chess_color_from_square(game->board[tmp.src_y][tmp.src_x]) || CHESS_MOVE_ILLEGAL == move || CHESS_MOVE_UNSAFE == move) {
+      brain->layers[2].outputs[i] = -1e9f;
+    }
+  }
+
+  act_softmax(brain->layers[2].outputs, brain->layers[2].output_size, 0.6f);
 
   for (i = 0; i < 4096; i++) {
     scored_moves[i].index = i;
@@ -103,17 +128,8 @@ predict_next_move(move_t *res, chess_game_t *game, ai_brain_t *brain, chess_colo
 
   qsort(scored_moves, 4096, sizeof(scored_move_t), compare_moves);
 
-  for (i = 0; i < 4096; i++) {
-    size_t move_index = scored_moves[i].index;
-
-    src_index = move_index / 64;
-    dst_index = move_index % 64;
-
-    res->src_x = src_index / 8;
-    res->src_y = src_index % 8;
-    res->dst_x = dst_index / 8;
-    res->dst_y = dst_index % 8;
-
+  for (i = 0; i < brain->layers[2].output_size; i++) {
+    move_from_index(res, scored_moves[i].index);
     move = chess_safe_move(game, res->src_x, res->src_y, res->dst_x, res->dst_y);
     if (color == chess_color_from_square(game->board[res->src_y][res->src_x]) && CHESS_MOVE_ILLEGAL != move && CHESS_MOVE_UNSAFE != move) {
       return 0;

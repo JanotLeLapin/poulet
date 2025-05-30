@@ -1,7 +1,8 @@
 #include <stdlib.h>
 
 typedef enum {
-  AI_ACTIVATION_RELU = 0,
+  AI_ACTIVATION_NONE = 0,
+  AI_ACTIVATION_RELU,
   AI_ACTIVATION_SOFTMAX,
 } ai_activation_type_t;
 
