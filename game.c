@@ -1,7 +1,4 @@
-#include <stdint.h>
-#include <stdlib.h>
-
-#include "game.h"
+#include "poulet.h"
 
 void
 chess_init(chess_game_t *game)

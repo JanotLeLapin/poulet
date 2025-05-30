@@ -1,12 +1,10 @@
 #include <math.h>
 #include <pthread.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
-#include "ai.h"
-#include "game.h"
+#include "poulet.h"
 
 #define POPULATION_SIZE 128
 #define GROUP_SIZE 8

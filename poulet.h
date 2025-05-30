@@ -1,9 +1,40 @@
-#ifndef _CHESS_GAME_H
-#define _CHESS_GAME_H
+#ifndef _POULET_H
+#define _POULET_H
 
 #include <stdint.h>
+#include <stdlib.h>
 
 static const char *LETTERS = "abcdefgh";
+
+typedef enum {
+  AI_ACTIVATION_NONE = 0,
+  AI_ACTIVATION_RELU,
+  AI_ACTIVATION_SOFTMAX,
+} ai_activation_type_t;
+
+typedef struct {
+  ai_activation_type_t type;
+  union {
+    struct {
+      float temperature;
+    } softmax;
+  } data;
+} ai_activation_t;
+
+typedef struct {
+  size_t input_size;
+  size_t output_size;
+  float *weights;
+  float *biases;
+  float *outputs;
+  ai_activation_t activation;
+} ai_layer_t;
+
+typedef struct {
+  size_t layer_count;
+  ai_layer_t *layers;
+} ai_brain_t;
+
 
 typedef enum {
   CHESS_PIECE_PAWN = 1,
@@ -123,5 +154,19 @@ chess_move_t chess_legal_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_
 chess_move_t chess_safe_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
 
 void chess_do_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by);
+
+void act_softmax(float *logits, size_t logit_count, float temperature);
+
+int ai_layer_init(ai_layer_t *layer, size_t input_size, size_t output_size, ai_activation_t activation);
+void ai_layer_offspring(ai_layer_t *child, ai_layer_t *a, ai_layer_t *b);
+void ai_layer_forward(ai_layer_t *layer, float *input);
+void ai_layer_free(ai_layer_t *layer);
+
+int ai_brain_init(ai_brain_t *brain, size_t layer_count);
+void ai_brain_offspring(ai_brain_t *a, ai_brain_t *b, ai_brain_t *child);
+void ai_brain_forward(ai_brain_t *brain, float *input);
+int ai_brain_save(ai_brain_t *brain, const char *filename);
+int ai_brain_load(ai_brain_t *brain, const char *filename);
+void ai_brain_free(ai_brain_t *brain);
 
 #endif

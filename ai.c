@@ -1,8 +1,7 @@
 #include <math.h>
 #include <stdio.h>
-#include <stdlib.h>
 
-#include "ai.h"
+#include "poulet.h"
 
 #define BURST_CHANCE 0.05f
 #define BURST_AMPLITUDE 0.5f

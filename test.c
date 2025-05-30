@@ -1,9 +1,8 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
-#include "game.h"
+#include "poulet.h"
 
 #define COLOR_RESET "\x1b[0m"
 #define COLOR_INFO  "\x1b[32m"
