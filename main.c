@@ -159,6 +159,8 @@ main(int argc, char **argv)
   start_gen = argc <= 1 ? 0 : atoi(argv[1]);
   stop_gen = argc <= 2 ? start_gen + 10 : atoi(argv[2]);
 
+  srand(time(0));
+
   if (0 < start_gen) {
     for (i = 0; i < ELITE_SIZE; i++) {
       snprintf(filename, sizeof(filename), "models/%d-%ld.model", start_gen, i);
@@ -234,6 +236,4 @@ main(int argc, char **argv)
   for (i = 0; i < POPULATION_SIZE; i++) {
     ai_brain_free(&brains[i]);
   }
-
-  // srand(time(NULL));
 }
