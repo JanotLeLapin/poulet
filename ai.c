@@ -113,8 +113,6 @@ crossover(float *dst, float *a, float *b, size_t size)
 void
 ai_layer_offspring(ai_layer_t *child, ai_layer_t *a, ai_layer_t *b)
 {
-  size_t i;
-
   crossover(child->weights, a->weights, b->weights, child->input_size * child->output_size);
   crossover(child->biases, a->biases, b->biases, child->output_size);
   child->activation = a->activation;
@@ -134,7 +132,7 @@ void
 ai_layer_forward(ai_layer_t *layer, float *input)
 {
   size_t i, j;
-  float sum, max, sum_exp;
+  float sum;
 
   for (i = 0; i < layer->output_size; i++) {
     sum = layer->biases[i];

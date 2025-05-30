@@ -102,7 +102,7 @@ move_from_index(move_t *res, size_t idx)
 int
 predict_next_move(move_t *res, chess_game_t *game, ai_brain_t *brain, chess_color_t color)
 {
-  size_t i, src_index, dst_index;
+  size_t i;
   float inputs[768];
   move_t tmp;
   scored_move_t scored_moves[4096];
