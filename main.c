@@ -5,9 +5,9 @@
 
 #include "poulet.h"
 
-#define POPULATION_SIZE 128
-#define GROUP_SIZE 8
-#define ELITE_SIZE 4
+#define POPULATION_SIZE 256
+#define GROUP_SIZE 16
+#define ELITE_SIZE 8
 
 typedef struct {
   uint8_t src_x;
