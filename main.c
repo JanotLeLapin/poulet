@@ -62,7 +62,7 @@ game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
       // chess_pretty_square(src, move[1], move[0]);
       // chess_pretty_square(dst, move[3], move[2]);
 
-      // printf("%ld: %s -> %s", i, src, dst);
+      // printf("%ld: %s -> %s\n", i, src, dst);
 
       switch (move_data) {
       case CHESS_MOVE_TAKE:
