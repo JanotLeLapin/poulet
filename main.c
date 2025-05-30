@@ -59,10 +59,10 @@ game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
       has_prediction = poulet_next_move(move, game, i == 0 ? a : b, c);
       move_data = chess_legal_move(game, move[1], move[0], move[3], move[2]);
 
-      // chess_pretty_square(src, move.src_x, move.src_y);
-      // chess_pretty_square(dst, move.dst_x, move.dst_y);
+      // chess_pretty_square(src, move[1], move[0]);
+      // chess_pretty_square(dst, move[3], move[2]);
 
-      // printf("%ld: %s -> %s\n", i, src, dst);
+      // printf("%ld: %s -> %s", i, src, dst);
 
       switch (move_data) {
       case CHESS_MOVE_TAKE:
