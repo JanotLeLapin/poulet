@@ -214,13 +214,17 @@ main(int argc, char **argv)
 
     start_gen++;
 
-    for (i = 0; i < ELITE_SIZE; i++) {
-      snprintf(filename, sizeof(filename), "models/%d-%ld.model", start_gen, i);
-      printf("saving %ld\n", ranked_brains[i].index);
-      ai_brain_save(&brains[ranked_brains[i].index], filename);
-    }
+    if (start_gen % 5 == 0) {
+      printf("saving elite\n");
 
-    printf("saved elite brains\n");
+      for (i = 0; i < ELITE_SIZE; i++) {
+        snprintf(filename, sizeof(filename), "models/%d-%ld.model", start_gen, i);
+        printf("saving %ld\n", ranked_brains[i].index);
+        ai_brain_save(&brains[ranked_brains[i].index], filename);
+      }
+
+      printf("saved elite brains\n");
+    }
 
     for (i = ELITE_SIZE; i < POPULATION_SIZE; i++) {
       do {
