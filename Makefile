@@ -2,7 +2,7 @@ CC = gcc
 LDFLAGS = -lm
 CFLAGS = -Wall -Wextra -g
 
-COMMON_SRCS = game.c ai.c
+COMMON_SRCS = poulet.c game.c ai.c
 COMMON_OBJS = $(COMMON_SRCS:.c=.o)
 
 TEST_TARGET = test

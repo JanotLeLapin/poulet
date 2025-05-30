@@ -1,4 +1,3 @@
-#include <math.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
@@ -9,11 +8,6 @@
 #define POPULATION_SIZE 128
 #define GROUP_SIZE 8
 #define ELITE_SIZE 4
-
-typedef struct {
-  size_t index;
-  float score;
-} scored_move_t;
 
 typedef struct {
   uint8_t src_x;
@@ -34,16 +28,6 @@ typedef struct {
 } ranked_brain_t;
 
 int
-compare_moves(const void *a, const void *b)
-{
-  const scored_move_t *move_a = a;
-  const scored_move_t *move_b = b;
-  if (move_a->score > move_b->score) return -1;
-  if (move_a->score < move_b->score) return 1;
-  return 0;
-}
-
-int
 compare_ranked_brains(const void *a, const void *b)
 {
   const ranked_brain_t *brain_a = a;
@@ -53,100 +37,14 @@ compare_ranked_brains(const void *a, const void *b)
   return 0;
 }
 
-void
-init_chess_brain(ai_brain_t *brain)
-{
-  ai_brain_init(brain, 3);
-  ai_layer_init(&brain->layers[0], 768, 1024, (ai_activation_t) { .type = AI_ACTIVATION_RELU });
-  ai_layer_init(&brain->layers[1], 1024, 512, (ai_activation_t) { .type = AI_ACTIVATION_RELU });
-  ai_layer_init(&brain->layers[2], 512, 4096, (ai_activation_t) { .type = AI_ACTIVATION_NONE });
-}
-
-void
-encode_chess_board(chess_board_t board, float *inputs)
-{
-  size_t i, j;
-  chess_square_t s;
-
-  for (i = 0; i < 768; i++) {
-    inputs[i] = 0.0f;
-  }
-
-  for (i = 0; i < 8; i++) {
-    for (j = 0; j < 8; j++) {
-      s = board[i][j];
-      if (0 == s) {
-        continue;
-      }
-
-      inputs[(i * 8 + j) * 12 + chess_piece_from_square(s) + chess_color_from_square(s) * 6] = 1.0f;
-    }
-  }
-}
-
-static inline void
-move_from_index(move_t *res, size_t idx)
-{
-  size_t src_index, dst_index;
-
-  src_index = idx / 64;
-  dst_index = idx % 64;
-
-  res->src_y = src_index / 8;
-  res->src_x = src_index % 8;
-  res->dst_y = dst_index / 8;
-  res->dst_x = dst_index % 8;
-}
-
-int
-predict_next_move(move_t *res, chess_game_t *game, ai_brain_t *brain, chess_color_t color)
-{
-  size_t i;
-  float inputs[768];
-  move_t tmp;
-  scored_move_t scored_moves[4096];
-  chess_move_t move;
-
-  encode_chess_board(game->board, inputs);
-  ai_brain_forward(brain, inputs);
-
-  for (i = 0; i < brain->layers[2].output_size; i++) {
-    move_from_index(&tmp, i);
-    move = chess_safe_move(game, tmp.src_x, tmp.src_y, tmp.dst_x, tmp.dst_y);
-    if (color != chess_color_from_square(game->board[tmp.src_y][tmp.src_x]) || CHESS_MOVE_ILLEGAL == move || CHESS_MOVE_UNSAFE == move) {
-      brain->layers[2].outputs[i] = -INFINITY;
-    }
-  }
-
-  act_softmax(brain->layers[2].outputs, brain->layers[2].output_size, 1.2f);
-
-  for (i = 0; i < 4096; i++) {
-    scored_moves[i].index = i;
-    scored_moves[i].score = brain->layers[2].outputs[i];
-  }
-
-  qsort(scored_moves, 4096, sizeof(scored_move_t), compare_moves);
-
-  for (i = 0; i < brain->layers[2].output_size; i++) {
-    move_from_index(res, scored_moves[i].index);
-    move = chess_safe_move(game, res->src_x, res->src_y, res->dst_x, res->dst_y);
-    if (color == chess_color_from_square(game->board[res->src_y][res->src_x]) && CHESS_MOVE_ILLEGAL != move && CHESS_MOVE_UNSAFE != move) {
-      return 0;
-    }
-  }
-
-  return -1;
-}
-
 int
 game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
 {
   size_t i;
   chess_color_t c;
   int has_prediction, score = 0;
-  move_t move;
+  uint8_t move[4], piece_value, until_stalemate = 0;
   chess_move_t move_data;
-  uint8_t piece_value, until_stalemate = 0;
   size_t total_moves = 0;
   // char src[3], dst[3];
 
@@ -158,8 +56,8 @@ game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
     for (i = 0; i < 2; i++)  {
       // printf("computing\n");
       c = (i + 1) % 2;
-      has_prediction = predict_next_move(&move, game, i == 0 ? a : b, c);
-      move_data = chess_legal_move(game, move.src_x, move.src_y, move.dst_x, move.dst_y);
+      has_prediction = poulet_next_move(move, game, i == 0 ? a : b, c);
+      move_data = chess_legal_move(game, move[1], move[0], move[3], move[2]);
 
       // chess_pretty_square(src, move.src_x, move.src_y);
       // chess_pretty_square(dst, move.dst_x, move.dst_y);
@@ -170,7 +68,7 @@ game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
       case CHESS_MOVE_TAKE:
         until_stalemate = 0;
 
-        switch (chess_piece_from_square(game->board[move.dst_y][move.dst_x])) {
+        switch (chess_piece_from_square(game->board[move[0]][move[1]])) {
         case CHESS_PIECE_PAWN:
           piece_value = 1;
           break;
@@ -209,7 +107,7 @@ game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
         return score;
       }
 
-      chess_do_move(game, move.src_x, move.src_y, move.dst_x, move.dst_y);
+      chess_do_move(game, move[1], move[0], move[3], move[2]);
     }
 
     total_moves += 2;
@@ -275,12 +173,12 @@ main(int argc, char **argv)
         parent_a = rand() % ELITE_SIZE;
         parent_b = rand() % ELITE_SIZE;
       } while (parent_a != parent_b);
-      init_chess_brain(&brains[i]);
+      poulet_brain_init(&brains[i]);
       ai_brain_offspring(&brains[parent_a], &brains[parent_b], &brains[i]);
     }
   } else {
     for (i = 0; i < POPULATION_SIZE; i++) {
-      init_chess_brain(&brains[i]);
+      poulet_brain_init(&brains[i]);
     }
   }
 
