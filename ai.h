@@ -3,6 +3,15 @@
 typedef enum {
   AI_ACTIVATION_RELU = 0,
   AI_ACTIVATION_SOFTMAX,
+} ai_activation_type_t;
+
+typedef struct {
+  ai_activation_type_t type;
+  union {
+    struct {
+      float temperature;
+    } softmax;
+  } data;
 } ai_activation_t;
 
 typedef struct {

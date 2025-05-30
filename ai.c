@@ -118,13 +118,17 @@ ai_layer_forward(ai_layer_t *layer, float *input)
     layer->outputs[i] = sum;
   }
 
-  switch (layer->activation) {
+  switch (layer->activation.type) {
   case AI_ACTIVATION_RELU:
     for (i = 0; i < layer->output_size; i++) {
       layer->outputs[i] = layer->outputs[i] > 0 ? layer->outputs[i] : 0;
     }
     break;
   case AI_ACTIVATION_SOFTMAX:
+    for (i = 0; i < layer->output_size; i++) {
+      layer->outputs[i] = layer->outputs[i] / layer->activation.data.softmax.temperature;
+    }
+
     max = layer->outputs[0];
     for (i = 0; i < layer->output_size; i++) {
       if (layer->outputs[i] > max) {
@@ -171,7 +175,7 @@ ai_brain_save(ai_brain_t *brain, const char *filename)
   fwrite(&brain->layer_count, sizeof(size_t), 1, f);
   for (i = 0; i < brain->layer_count; i++) {
     l = brain->layers[i];
-    fwrite(&l.activation, sizeof(ai_activation_t), 1, f);
+    fwrite(&l.activation, sizeof(ai_activation_type_t), 1, f);
     fwrite(&l.input_size, sizeof(size_t), 1, f);
     fwrite(&l.output_size, sizeof(size_t), 1, f);
     fwrite(l.weights, sizeof(float), l.input_size * l.output_size, f);
@@ -196,7 +200,7 @@ ai_brain_load(ai_brain_t *brain, const char *filename)
   brain->layers = malloc(sizeof(ai_layer_t) * brain->layer_count);
   for (i = 0; i < brain->layer_count; i++) {
     l = &brain->layers[i];
-    fread(&l->activation, sizeof(ai_activation_t), 1, f);
+    fread(&l->activation, sizeof(ai_activation_type_t), 1, f);
     fread(&l->input_size, sizeof(size_t), 1, f);
     fread(&l->output_size, sizeof(size_t), 1, f);
     l->weights = malloc(sizeof(float) * l->input_size * l->output_size);

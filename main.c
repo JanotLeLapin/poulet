@@ -58,9 +58,9 @@ void
 init_chess_brain(ai_brain_t *brain)
 {
   ai_brain_init(brain, 3);
-  ai_layer_init(&brain->layers[0], 768, 1024, AI_ACTIVATION_RELU);
-  ai_layer_init(&brain->layers[1], 1024, 512, AI_ACTIVATION_RELU);
-  ai_layer_init(&brain->layers[2], 512, 4096, AI_ACTIVATION_SOFTMAX);
+  ai_layer_init(&brain->layers[0], 768, 1024, (ai_activation_t) { .type = AI_ACTIVATION_RELU });
+  ai_layer_init(&brain->layers[1], 1024, 512, (ai_activation_t) { .type = AI_ACTIVATION_RELU });
+  ai_layer_init(&brain->layers[2], 512, 4096, (ai_activation_t) { .type = AI_ACTIVATION_SOFTMAX, .data.softmax.temperature = 0.6f });
 }
 
 void
