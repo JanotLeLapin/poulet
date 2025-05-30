@@ -19,7 +19,8 @@ gaussian_noise()
 void
 act_softmax(float *logits, size_t logit_count, float temperature)
 {
-  size_t i, max, sum_exp;
+  size_t i;
+  float max, sum_exp;
 
   for (i = 0; i < logit_count; i++) {
     logits[i] = logits[i] / temperature;
