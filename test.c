@@ -301,6 +301,11 @@ test_castle()
   ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 7, 6, 7));
   ASSERT_INT_EQ(CHESS_MOVE_CASTLE, chess_legal_move(&game, 4, 7, 2, 7));
 
+  chess_init(&game);
+  game.board[0][2] = 0;
+  game.board[0][3] = 0;
+  ASSERT_INT_EQ(CHESS_MOVE_ILLEGAL, chess_legal_move(&game, 4, 0, 2, 0));
+
   END_UNIT();
 }
 

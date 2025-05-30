@@ -134,7 +134,7 @@ king_legal(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
       return CHESS_MOVE_ILLEGAL;
     }
 
-    for (i = 1; i <= 2; i++) {
+    for (i = 1; i <= (step == -1 ? 3 : 2); i++) {
       if (0 != game->board[ay][ax + step * i]) {
         can_castle = CHESS_MOVE_ILLEGAL;
         break;
