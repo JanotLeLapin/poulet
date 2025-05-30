@@ -1,3 +1,4 @@
+#include <math.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -115,7 +116,7 @@ predict_next_move(move_t *res, chess_game_t *game, ai_brain_t *brain, chess_colo
     move_from_index(&tmp, i);
     move = chess_safe_move(game, tmp.src_x, tmp.src_y, tmp.dst_x, tmp.dst_y);
     if (color != chess_color_from_square(game->board[tmp.src_y][tmp.src_x]) || CHESS_MOVE_ILLEGAL == move || CHESS_MOVE_UNSAFE == move) {
-      brain->layers[2].outputs[i] = -1e9f;
+      brain->layers[2].outputs[i] = -INFINITY;
     }
   }
 
