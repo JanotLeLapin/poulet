@@ -16,6 +16,32 @@ gaussian_noise()
   return sqrtf(-2.0f * logf(u1)) * cosf(2.0f * M_PI * u2);
 }
 
+void
+act_softmax(float *logits, size_t logit_count, float temperature)
+{
+  size_t i, max, sum_exp;
+
+  for (i = 0; i < logit_count; i++) {
+    logits[i] = logits[i] / temperature;
+  }
+
+  max = logits[0];
+  for (i = 0; i < logit_count; i++) {
+    if (logits[i] > max) {
+      max = logits[i];
+    }
+  }
+
+  sum_exp = 0.0f;
+  for (i = 0; i < logit_count; i++) {
+    logits[i] = expf(logits[i] - max);
+    sum_exp += logits[i];
+  }
+
+  for (i = 0; i < logit_count; i++) {
+    logits[i] /= sum_exp;
+  }
+}
 
 int
 ai_layer_init(ai_layer_t *layer, size_t input_size, size_t output_size, ai_activation_t activation)
@@ -125,26 +151,7 @@ ai_layer_forward(ai_layer_t *layer, float *input)
     }
     break;
   case AI_ACTIVATION_SOFTMAX:
-    for (i = 0; i < layer->output_size; i++) {
-      layer->outputs[i] = layer->outputs[i] / layer->activation.data.softmax.temperature;
-    }
-
-    max = layer->outputs[0];
-    for (i = 0; i < layer->output_size; i++) {
-      if (layer->outputs[i] > max) {
-        max = layer->outputs[i];
-      }
-    }
-
-    sum_exp = 0.0f;
-    for (i = 0; i < layer->output_size; i++) {
-      layer->outputs[i] = expf(layer->outputs[i] - max);
-      sum_exp += layer->outputs[i];
-    }
-
-    for (i = 0; i < layer->output_size; i++) {
-      layer->outputs[i] /= sum_exp;
-    }
+    act_softmax(layer->outputs, layer->output_size, layer->activation.data.softmax.temperature);
     break;
   default:
     break;

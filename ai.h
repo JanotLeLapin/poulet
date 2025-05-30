@@ -28,6 +28,8 @@ typedef struct {
   ai_layer_t *layers;
 } ai_brain_t;
 
+void act_softmax(float *logits, size_t logit_count, float temperature);
+
 int ai_layer_init(ai_layer_t *layer, size_t input_size, size_t output_size, ai_activation_t activation);
 void ai_layer_offspring(ai_layer_t *child, ai_layer_t *a, ai_layer_t *b);
 void ai_layer_forward(ai_layer_t *layer, float *input);
