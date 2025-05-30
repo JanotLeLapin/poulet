@@ -42,6 +42,7 @@ game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
 {
   size_t i;
   chess_color_t c;
+  chess_piece_t p;
   int has_prediction, score = 0;
   uint8_t move[4], piece_value, until_stalemate = 0;
   chess_move_t move_data;
@@ -56,6 +57,7 @@ game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
     for (i = 0; i < 2; i++)  {
       // printf("computing\n");
       c = (i + 1) % 2;
+      p = chess_piece_from_square(game->board[move[0]][move[1]]);
       has_prediction = poulet_next_move(move, game, i == 0 ? a : b, c);
       move_data = chess_legal_move(game, move[1], move[0], move[3], move[2]);
 
@@ -68,7 +70,7 @@ game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
       case CHESS_MOVE_TAKE:
         until_stalemate = 0;
 
-        switch (chess_piece_from_square(game->board[move[0]][move[1]])) {
+        switch (p) {
         case CHESS_PIECE_PAWN:
           piece_value = 1;
           break;
@@ -94,11 +96,11 @@ game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
         score += (CHESS_COLOR_WHITE == c ? 1 : -1);
         break;
       default:
-        until_stalemate++;
+        until_stalemate = CHESS_PIECE_PAWN == p ? 0 : until_stalemate + 1;
         break;
       }
 
-      if (40 <= until_stalemate) {
+      if (50 <= until_stalemate) {
         return score;
       }
 
