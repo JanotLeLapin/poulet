@@ -94,10 +94,10 @@ move_from_index(move_t *res, size_t idx)
   src_index = idx / 64;
   dst_index = idx % 64;
 
-  res->src_x = src_index / 8;
-  res->src_y = src_index % 8;
-  res->dst_x = dst_index / 8;
-  res->dst_y = dst_index % 8;
+  res->src_y = src_index / 8;
+  res->src_x = src_index % 8;
+  res->dst_y = dst_index / 8;
+  res->dst_x = dst_index % 8;
 }
 
 int
