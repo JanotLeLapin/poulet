@@ -99,9 +99,15 @@ chess_stringify_color(chess_color_t color)
 }
 
 inline static int
-chess_get_enpassant(chess_meta_t meta)
+chess_get_enpassant_file(chess_meta_t meta)
 {
-  return (0x01 == (meta & 0x01)) ? (meta >> 2) & 0x07 : -1;
+  return (0x01 == (meta & 0x01)) ? ((meta >> 2) & 0x07) : -1;
+}
+
+inline static int
+chess_get_enpassant_color(chess_meta_t meta)
+{
+  return (0x01 == (meta & 0x01)) ? ((meta >> 1) & 0x01) : -1;
 }
 
 inline static int

@@ -39,11 +39,9 @@ pawn_legal(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
   chess_square_t s = game->board[ay][ax];
   chess_color_t c = chess_color_from_square(s);
   char direction = c * -2 + 1;
-  int en_passant;
 
   if (0 == game->board[by][bx]) {
-    en_passant = chess_get_enpassant(game->meta);
-    if (bx == en_passant && by == (CHESS_COLOR_WHITE == c ? 2 : 5)) {
+    if (bx == chess_get_enpassant_file(game->meta) && (int) c != chess_get_enpassant_color(game->meta) && by == (CHESS_COLOR_WHITE == c ? 2 : 5)) {
       return 1 == abs(ax - bx) && by == ay + direction ? CHESS_MOVE_TAKE_ENPASSANT : CHESS_MOVE_ILLEGAL;
     }
     return bx == ax && (by == ay + direction || ((c == CHESS_COLOR_WHITE ? 6 : 1) == ay && by == ay + direction * 2 && 0 == game->board[ay + direction][ax]));
@@ -303,7 +301,7 @@ chess_do_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by
     game->meta = game->meta & ~(0x01 << (5 + chess_color_from_square(game->board[ay][ax])));
   }
 
-  if (-1 != chess_get_enpassant(game->meta) && chess_color_from_square(game->board[ay][ax]) == ((game->meta >> 1) & 0x01)) {
+  if ((int) chess_color_from_square(game->board[ay][ax]) == chess_get_enpassant_color(game->meta)) {
     game->meta = game->meta & ~(0x1F);
   }
 
