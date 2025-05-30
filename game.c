@@ -129,7 +129,7 @@ king_legal(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 
   s = game->board[ay][ax];
   c = chess_color_from_square(s);
-  if (abs(bx - ax) == 2 && by == ay && chess_get_castling_rights(game->meta, c) && !chess_is_check(game, c)) {
+  if (abs(bx - ax) == 2 && by == ay && chess_get_castling_rights(game->meta, c) && !chess_is_check(game, c) && 0 == game->board[by][bx]) {
     step = bx < ax ? -1 : 1;
     rook = game->board[ay][step == -1 ? 0 : 7];
 
