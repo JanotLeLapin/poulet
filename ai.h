@@ -2,6 +2,7 @@
 
 typedef enum {
   AI_ACTIVATION_RELU = 0,
+  AI_ACTIVATION_SOFTMAX,
 } ai_activation_t;
 
 typedef struct {

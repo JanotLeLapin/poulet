@@ -108,19 +108,42 @@ void
 ai_layer_forward(ai_layer_t *layer, float *input)
 {
   size_t i, j;
-  float sum;
+  float sum, max, sum_exp;
 
   for (i = 0; i < layer->output_size; i++) {
     sum = layer->biases[i];
     for (j = 0; j < layer->input_size; j++) {
       sum += layer->weights[i * layer->input_size + j] * input[j];
     }
+    layer->outputs[i] = sum;
+  }
 
-    switch (layer->activation) {
-    case AI_ACTIVATION_RELU:
-      layer->outputs[i] = sum > 0 ? sum : 0;
-      break;
+  switch (layer->activation) {
+  case AI_ACTIVATION_RELU:
+    for (i = 0; i < layer->output_size; i++) {
+      layer->outputs[i] = layer->outputs[i] > 0 ? layer->outputs[i] : 0;
     }
+    break;
+  case AI_ACTIVATION_SOFTMAX:
+    max = layer->outputs[0];
+    for (i = 0; i < layer->output_size; i++) {
+      if (layer->outputs[i] > max) {
+        max = layer->outputs[i];
+      }
+    }
+
+    sum_exp = 0.0f;
+    for (i = 0; i < layer->output_size; i++) {
+      layer->outputs[i] = expf(layer->outputs[i] - max);
+      sum_exp += layer->outputs[i];
+    }
+
+    for (i = 0; i < layer->output_size; i++) {
+      layer->outputs[i] /= sum_exp;
+    }
+    break;
+  default:
+    break;
   }
 }
 
