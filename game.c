@@ -295,18 +295,23 @@ void
 chess_do_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by)
 {
   chess_move_t move;
+  chess_color_t c;
+  chess_piece_t p;
   uint8_t enpassant_y, rook_src_x, rook_dest_x;
 
-  if (CHESS_PIECE_KING == chess_piece_from_square(game->board[ay][ax])) {
-    game->meta = game->meta & ~(0x01 << (5 + chess_color_from_square(game->board[ay][ax])));
+  c = chess_color_from_square(game->board[ay][ax]);
+  p = chess_piece_from_square(game->board[ay][ax]);
+
+  if (CHESS_PIECE_KING == p) {
+    game->meta = game->meta & ~(0x01 << (5 + c));
   }
 
-  if ((int) chess_color_from_square(game->board[ay][ax]) == chess_get_enpassant_color(game->meta)) {
+  if ((int) c == chess_get_enpassant_color(game->meta)) {
     game->meta = game->meta & ~(0x1F);
   }
 
-  if (CHESS_PIECE_PAWN == chess_piece_from_square(game->board[ay][ax]) && 2 == abs(ay - by)) {
-    game->meta = (game->meta & (~0x1F)) | 0x01 | (chess_color_from_square(game->board[ay][ax]) << 1) | (ax << 2);
+  if (CHESS_PIECE_PAWN == p && 2 == abs(ay - by)) {
+    game->meta = (game->meta & (~0x1F)) | 0x01 | (c << 1) | (ax << 2);
   }
 
   move = chess_safe_move(game, ax, ay, bx, by);
@@ -317,7 +322,7 @@ chess_do_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by
     game->board[ay][ax] = 0;
     break;
   case CHESS_MOVE_TAKE_ENPASSANT:
-    enpassant_y = by + (CHESS_COLOR_WHITE == chess_color_from_square(game->board[ay][ax]) ? 1 : -1);
+    enpassant_y = by + (CHESS_COLOR_WHITE == c ? 1 : -1);
     game->board[by][bx] = game->board[ay][ax];
     game->board[ay][ax] = 0;
     game->board[enpassant_y][bx] = 0;
@@ -336,6 +341,10 @@ chess_do_move(chess_game_t *game, uint8_t ax, uint8_t ay, uint8_t bx, uint8_t by
     break;
   case CHESS_MOVE_ILLEGAL:
   case CHESS_MOVE_UNSAFE:
-    break;
+    return;
+  }
+
+  if (CHESS_PIECE_PAWN == p && ((CHESS_COLOR_WHITE == c && 0 == by) || (CHESS_COLOR_BLACK == c && 7 == by))) {
+    game->board[by][bx] = chess_new_square(CHESS_PIECE_QUEEN, c); // automatically promote to queen
   }
 }
