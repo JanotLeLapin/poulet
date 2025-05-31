@@ -241,39 +241,6 @@ ai_brain_load(ai_brain_t *brain, const char *filename)
   return 0;
 }
 
-int
-ai_brain_load_from_buffer(ai_brain_t *brain, const uint8_t *buffer, size_t buffer_length)
-{
-  const uint8_t *p;
-  size_t i;
-  ai_layer_t *l;
-
-  p = buffer;
-
-  BUF_READ(brain->layer_count, p, sizeof(size_t));
-  for (i = 0; i < brain->layer_count; i++) {
-    l = &brain->layers[i];
-    BUF_READ(l->activation.type, p, sizeof(ai_activation_type_t));
-    switch (l->activation.type) {
-    case AI_ACTIVATION_NONE:
-    case AI_ACTIVATION_RELU:
-      break;
-    case AI_ACTIVATION_SOFTMAX:
-      BUF_READ(l->activation.data.softmax, p, sizeof(ai_activation_data_softmax));
-      break;
-    }
-    BUF_READ(l->input_size, p, sizeof(size_t));
-    BUF_READ(l->output_size, p, sizeof(size_t));
-    l->weights = malloc(sizeof(float) * l->input_size * l->output_size);
-    l->biases = malloc(sizeof(float) * l->output_size);
-    l->outputs = malloc(sizeof(float) * l->output_size);
-    BUF_READ(l->weights, p, sizeof(float) * l->input_size * l->output_size);
-    BUF_READ(l->biases, p, sizeof(float) * l->output_size);
-  }
-
-  return 0;
-}
-
 void
 ai_layer_free(ai_layer_t *layer)
 {
