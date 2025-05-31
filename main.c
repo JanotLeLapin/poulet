@@ -48,6 +48,13 @@ compare_ranked_brains(const void *a, const void *b)
   return 0;
 }
 
+static inline void
+normalize_scores(float *scores, size_t total_moves)
+{
+  scores[0] /= total_moves;
+  scores[1] /= total_moves;
+}
+
 void
 game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
 {
@@ -112,16 +119,14 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
       }
 
       if (50 <= until_stalemate) {
-        scores[0] /= total_moves;
-        scores[1] /= total_moves;
+        normalize_scores(scores, total_moves);
         return;
       }
 
       if (-1 == has_prediction) {
         scores[c] -= 1000;
         scores[i] += 1000;
-        scores[0] /= total_moves;
-        scores[1] /= total_moves;
+        normalize_scores(scores, total_moves);
         return;
       }
 
@@ -131,8 +136,7 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
     total_moves += 2;
     if (total_moves > 2048) {
       printf("exceeded max moves\n");
-      scores[0] /= total_moves;
-      scores[1] /= total_moves;
+      normalize_scores(scores, total_moves);
       return;
     }
   }
