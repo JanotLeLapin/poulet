@@ -191,7 +191,7 @@ main(int argc, char **argv)
     for (i = 0; i < POPULATION_SIZE / GROUP_SIZE; i++) {
       data[i].brains = brains;
       data[i].offset = i;
-      memset(data[i].results, 0, 8 * 8 * sizeof(int));
+      memset(data[i].results, 0, GROUP_SIZE * GROUP_SIZE * sizeof(int));
       pthread_create(&threads[i], NULL, training_thread, &data[i]);
     }
 
@@ -206,6 +206,9 @@ main(int argc, char **argv)
         ranked_brains[j + i * GROUP_SIZE].index = j + i * GROUP_SIZE;
         ranked_brains[j + i * GROUP_SIZE].score = 0;
         for (k = 0; k < GROUP_SIZE; k++) {
+          if (k == j) {
+            continue;
+          }
           ranked_brains[j + i * GROUP_SIZE].score += data[i].results[j][k][0];
           ranked_brains[j + i * GROUP_SIZE].score += data[i].results[k][j][1];
         }
