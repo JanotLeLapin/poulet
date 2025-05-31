@@ -19,7 +19,7 @@ typedef struct {
 typedef struct {
   size_t offset;
   ai_brain_t *brains;
-  int results[GROUP_SIZE][GROUP_SIZE][2];
+  float results[GROUP_SIZE][GROUP_SIZE][2];
 } thread_data_t;
 
 typedef struct {
@@ -37,12 +37,12 @@ compare_ranked_brains(const void *a, const void *b)
   return 0;
 }
 
-int
-game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
+void
+game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
 {
   size_t i;
   chess_color_t c;
-  int has_prediction, score = 0;
+  int has_prediction;
   uint8_t move[4], piece_value, until_stalemate = 0;
   chess_move_t move_data;
   size_t total_moves = 0;
@@ -86,12 +86,14 @@ game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
           break;
         }
 
-        score += (CHESS_COLOR_WHITE == c ? 1 : -1) * piece_value;
+        scores[c] += piece_value;
+        scores[i] -= piece_value;
         break;
       case CHESS_MOVE_TAKE_ENPASSANT:
         until_stalemate = 0;
 
-        score += (CHESS_COLOR_WHITE == c ? 1 : -1);
+        scores[c]++;
+        scores[i]--;
         break;
       default:
         until_stalemate = CHESS_PIECE_PAWN == chess_piece_from_square(game->board[move[0]][move[1]]) ? 0 : until_stalemate + 1;
@@ -99,12 +101,15 @@ game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
       }
 
       if (50 <= until_stalemate) {
-        return score;
+        scores[0] /= total_moves;
+        scores[1] /= total_moves;
+        return;
       }
 
       if (-1 == has_prediction) {
-        score += (CHESS_COLOR_WHITE == c ? -50 : 50);
-        return score;
+        scores[c] -= 1000;
+        scores[i] += 1000;
+        return;
       }
 
       chess_do_move(game, move[1], move[0], move[3], move[2]);
@@ -113,7 +118,9 @@ game_loop(chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
     total_moves += 2;
     if (total_moves > 2048) {
       printf("exceeded max moves\n");
-      return 0;
+      scores[0] /= total_moves;
+      scores[1] /= total_moves;
+      return;
     }
   }
 }
@@ -125,7 +132,6 @@ training_thread(void *arg)
   size_t i, j;
   ai_brain_t a, b;
   chess_game_t game;
-  int res;
 
   for (i = 0; i < GROUP_SIZE; i++) {
     for (j = 0; j < GROUP_SIZE; j++) {
@@ -137,10 +143,8 @@ training_thread(void *arg)
       b = data->brains[j + data->offset * GROUP_SIZE];
       chess_init(&game);
 
-      res = game_loop(&game, &a, &b);
-      data->results[i][j][0] = res;
-      data->results[i][j][1] = -res;
-      printf("game over (%ld,%ld: %d)\n", i + data->offset * GROUP_SIZE, j + data->offset * GROUP_SIZE, data->results[i][j]);
+      game_loop(data->results[i][j], &game, &a, &b);
+      printf("game over (%ld,%ld: white: %f, black: %f)\n", i + data->offset * GROUP_SIZE, j + data->offset * GROUP_SIZE, data->results[i][j][0], data->results[i][j][1]);
     }
   }
 
