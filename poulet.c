@@ -65,7 +65,7 @@ poulet_brain_init(ai_brain_t *brain)
 int
 poulet_next_move(uint8_t *res, chess_game_t *game, ai_brain_t *brain, chess_color_t color, float temperature)
 {
-  size_t i;
+  size_t i, invalid_moves = 0;
   float inputs[768];
   uint8_t tmp[4];
   scored_move_t scored_moves[4096];
@@ -79,25 +79,24 @@ poulet_next_move(uint8_t *res, chess_game_t *game, ai_brain_t *brain, chess_colo
     move = chess_safe_move(game, tmp[1], tmp[0], tmp[3], tmp[2]);
     if (color != chess_color_from_square(game->board[tmp[0]][tmp[1]]) || CHESS_MOVE_ILLEGAL == move || CHESS_MOVE_UNSAFE == move) {
       brain->layers[2].outputs[i] = -INFINITY;
+      invalid_moves++;
     }
+  }
+
+  if (brain->layers[2].output_size <= invalid_moves) {
+    return -1;
   }
 
   act_softmax(brain->layers[2].outputs, brain->layers[2].output_size, temperature);
 
-  for (i = 0; i < 4096; i++) {
+  for (i = 0; i < brain->layers[2].output_size; i++) {
     scored_moves[i].index = i;
     scored_moves[i].score = brain->layers[2].outputs[i];
   }
 
   qsort(scored_moves, 4096, sizeof(scored_move_t), compare_moves);
 
-  for (i = 0; i < brain->layers[2].output_size; i++) {
-    move_from_index(res, scored_moves[i].index);
-    move = chess_safe_move(game, res[1], res[0], res[3], res[2]);
-    if (color == chess_color_from_square(game->board[res[0]][res[1]]) && CHESS_MOVE_ILLEGAL != move && CHESS_MOVE_UNSAFE != move) {
-      return 0;
-    }
-  }
+  move_from_index(res, scored_moves[0].index);
 
-  return -1;
+  return 0;
 }
