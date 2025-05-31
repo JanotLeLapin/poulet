@@ -182,7 +182,7 @@ main(int argc, char **argv)
   sigaction(SIGINT, &act, NULL);
 
   int start_gen, stop_gen;
-  ai_brain_t brains[POPULATION_SIZE];
+  ai_brain_t brains[POPULATION_SIZE], tmp_brain;
   pthread_t threads[POPULATION_SIZE / GROUP_SIZE];
   thread_data_t data[POPULATION_SIZE / GROUP_SIZE];
   ranked_brain_t ranked_brains[POPULATION_SIZE];
@@ -269,6 +269,15 @@ main(int argc, char **argv)
         parent_b = rand() % ELITE_SIZE;
       } while (parent_a != parent_b);
       ai_brain_offspring(&brains[ranked_brains[parent_a].index], &brains[ranked_brains[parent_b].index], &brains[ranked_brains[i].index]);
+    }
+
+    printf("shuffling new brains\n");
+    for (i = POPULATION_SIZE - 1; i > 0; i--) {
+      j = rand() % (i + 1);
+
+      tmp_brain = brains[i];
+      brains[i] = brains[j];
+      brains[j] = tmp_brain;
     }
   }
 
