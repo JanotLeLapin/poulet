@@ -25,7 +25,7 @@ typedef struct {
 
 typedef struct {
   size_t index;
-  int score;
+  float score;
 } ranked_brain_t;
 
 volatile sig_atomic_t running = 1;
