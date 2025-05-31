@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -26,6 +27,16 @@ typedef struct {
   size_t index;
   int score;
 } ranked_brain_t;
+
+volatile sig_atomic_t running = 1;
+
+void
+handle_sigint(int sig)
+{
+  if (SIGINT == sig) {
+    running = 0;
+  }
+}
 
 int
 compare_ranked_brains(const void *a, const void *b)
@@ -154,6 +165,13 @@ training_thread(void *arg)
 int
 main(int argc, char **argv)
 {
+  struct sigaction act;
+  act.sa_handler = handle_sigint;
+  sigemptyset(&act.sa_mask);
+  act.sa_flags = SA_RESTART;
+
+  sigaction(SIGINT, &act, NULL);
+
   int start_gen, stop_gen;
   ai_brain_t brains[POPULATION_SIZE];
   pthread_t threads[POPULATION_SIZE / GROUP_SIZE];
@@ -190,7 +208,7 @@ main(int argc, char **argv)
     }
   }
 
-  while (start_gen < stop_gen) {
+  while (start_gen < stop_gen && running) {
     printf("-- GENERATION %d/%d --\n", start_gen, stop_gen);
     for (i = 0; i < POPULATION_SIZE / GROUP_SIZE; i++) {
       data[i].brains = brains;
