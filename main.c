@@ -175,12 +175,6 @@ int
 main(int argc, char **argv)
 {
   struct sigaction act;
-  act.sa_handler = handle_sigint;
-  sigemptyset(&act.sa_mask);
-  act.sa_flags = SA_RESTART;
-
-  sigaction(SIGINT, &act, NULL);
-
   int start_gen, stop_gen;
   ai_brain_t brains[POPULATION_SIZE], tmp_brain;
   pthread_t threads[POPULATION_SIZE / GROUP_SIZE];
@@ -188,6 +182,12 @@ main(int argc, char **argv)
   ranked_brain_t ranked_brains[POPULATION_SIZE];
   size_t i, j, k, parent_a, parent_b;
   char filename[32];
+
+  act.sa_handler = handle_sigint;
+  sigemptyset(&act.sa_mask);
+  act.sa_flags = SA_RESTART;
+
+  sigaction(SIGINT, &act, NULL);
 
   start_gen = argc <= 1 ? 0 : atoi(argv[1]);
   stop_gen = argc <= 2 ? start_gen + 10 : atoi(argv[2]);
