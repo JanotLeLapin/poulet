@@ -2,21 +2,6 @@
 
 #include "poulet.h"
 
-typedef struct {
-  size_t index;
-  float score;
-} scored_move_t;
-
-static int
-compare_moves(const void *a, const void *b)
-{
-  const scored_move_t *move_a = a;
-  const scored_move_t *move_b = b;
-  if (move_a->score > move_b->score) return -1;
-  if (move_a->score < move_b->score) return 1;
-  return 0;
-}
-
 void
 encode_board(chess_board_t board, float *inputs)
 {
@@ -65,10 +50,9 @@ poulet_brain_init(ai_brain_t *brain)
 int
 poulet_next_move(uint8_t *res, chess_game_t *game, ai_brain_t *brain, chess_color_t color, float temperature)
 {
-  size_t i, invalid_moves = 0;
-  float inputs[768];
+  size_t i, invalid_moves = 0, selected_index = 0;
+  float inputs[768], r, total_weight = 0.0f, cumulative_weight = 0.0f, max_score = -INFINITY;
   uint8_t tmp[4];
-  scored_move_t scored_moves[4096];
   chess_move_t move;
 
   encode_board(game->board, inputs);
@@ -90,13 +74,36 @@ poulet_next_move(uint8_t *res, chess_game_t *game, ai_brain_t *brain, chess_colo
   act_softmax(brain->layers[2].outputs, brain->layers[2].output_size, temperature);
 
   for (i = 0; i < brain->layers[2].output_size; i++) {
-    scored_moves[i].index = i;
-    scored_moves[i].score = brain->layers[2].outputs[i];
+    if (0 < brain->layers[2].outputs[i]) {
+      total_weight += brain->layers[2].outputs[i];
+    }
   }
 
-  qsort(scored_moves, 4096, sizeof(scored_move_t), compare_moves);
+  r = (float) rand() / (float) RAND_MAX * total_weight;
+  cumulative_weight = 0.0f;
 
-  move_from_index(res, scored_moves[0].index);
+  for (i = 0; i < brain->layers[2].output_size; i++) {
+    if (0 >= brain->layers[2].outputs) {
+      continue;
+    }
+
+    cumulative_weight += brain->layers[2].outputs[i];
+    if (r <= cumulative_weight) {
+      selected_index = i;
+      break;
+    }
+  }
+
+  if (cumulative_weight < r) {
+    for (i = 0; i < brain->layers[2].output_size; i++) {
+      if (max_score < brain->layers[2].outputs[i]) {
+        max_score = brain->layers[2].outputs[i];
+        selected_index = i;
+      }
+    }
+  }
+
+  move_from_index(res, brain->layers[2].outputs[selected_index]);
 
   return 0;
 }
