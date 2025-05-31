@@ -63,7 +63,7 @@ poulet_brain_init(ai_brain_t *brain)
 }
 
 int
-poulet_next_move(uint8_t *res, chess_game_t *game, ai_brain_t *brain, chess_color_t color)
+poulet_next_move(uint8_t *res, chess_game_t *game, ai_brain_t *brain, chess_color_t color, float temperature)
 {
   size_t i;
   float inputs[768];
@@ -82,7 +82,7 @@ poulet_next_move(uint8_t *res, chess_game_t *game, ai_brain_t *brain, chess_colo
     }
   }
 
-  act_softmax(brain->layers[2].outputs, brain->layers[2].output_size, 0.6f);
+  act_softmax(brain->layers[2].outputs, brain->layers[2].output_size, temperature);
 
   for (i = 0; i < 4096; i++) {
     scored_moves[i].index = i;

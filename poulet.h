@@ -173,6 +173,6 @@ int ai_brain_load_from_buffer(ai_brain_t *brain, const uint8_t *buffer, size_t b
 void ai_brain_free(ai_brain_t *brain);
 
 void poulet_brain_init(ai_brain_t *brain);
-int poulet_next_move(uint8_t *res, chess_game_t *game, ai_brain_t *brain, chess_color_t color);
+int poulet_next_move(uint8_t *res, chess_game_t *game, ai_brain_t *brain, chess_color_t color, float temperature);
 
 #endif
