@@ -83,7 +83,7 @@ poulet_next_move(uint8_t *res, chess_game_t *game, ai_brain_t *brain, chess_colo
   cumulative_weight = 0.0f;
 
   for (i = 0; i < brain->layers[2].output_size; i++) {
-    if (0 >= brain->layers[2].outputs) {
+    if (0 >= brain->layers[2].outputs[i]) {
       continue;
     }
 
@@ -103,7 +103,7 @@ poulet_next_move(uint8_t *res, chess_game_t *game, ai_brain_t *brain, chess_colo
     }
   }
 
-  move_from_index(res, brain->layers[2].outputs[selected_index]);
+  move_from_index(res, selected_index);
 
   return 0;
 }
