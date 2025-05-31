@@ -19,7 +19,7 @@ typedef struct {
 typedef struct {
   size_t offset;
   ai_brain_t *brains;
-  int results[GROUP_SIZE][GROUP_SIZE];
+  int results[GROUP_SIZE][GROUP_SIZE][2];
 } thread_data_t;
 
 typedef struct {
@@ -125,6 +125,7 @@ training_thread(void *arg)
   size_t i, j;
   ai_brain_t a, b;
   chess_game_t game;
+  int res;
 
   for (i = 0; i < GROUP_SIZE; i++) {
     for (j = 0; j < GROUP_SIZE; j++) {
@@ -136,8 +137,9 @@ training_thread(void *arg)
       b = data->brains[j + data->offset * GROUP_SIZE];
       chess_init(&game);
 
-
-      data->results[i][j] = game_loop(&game, &a, &b);
+      res = game_loop(&game, &a, &b);
+      data->results[i][j][0] = res;
+      data->results[i][j][1] = -res;
       printf("game over (%ld,%ld: %d)\n", i + data->offset * GROUP_SIZE, j + data->offset * GROUP_SIZE, data->results[i][j]);
     }
   }
@@ -204,8 +206,8 @@ main(int argc, char **argv)
         ranked_brains[j + i * GROUP_SIZE].index = j + i * GROUP_SIZE;
         ranked_brains[j + i * GROUP_SIZE].score = 0;
         for (k = 0; k < GROUP_SIZE; k++) {
-          ranked_brains[j + i * GROUP_SIZE].score += data[i].results[j][k];
-          ranked_brains[j + i * GROUP_SIZE].score += -data[i].results[k][j];
+          ranked_brains[j + i * GROUP_SIZE].score += data[i].results[j][k][0];
+          ranked_brains[j + i * GROUP_SIZE].score += data[i].results[k][j][1];
         }
       }
     }
