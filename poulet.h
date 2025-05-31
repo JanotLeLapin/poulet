@@ -24,8 +24,8 @@ typedef struct {
 } ai_activation_t;
 
 typedef struct {
-  size_t input_size;
-  size_t output_size;
+  uint64_t input_size;
+  uint64_t output_size;
   float *weights;
   float *biases;
   float *outputs;
@@ -33,7 +33,7 @@ typedef struct {
 } ai_layer_t;
 
 typedef struct {
-  size_t layer_count;
+  uint64_t layer_count;
   ai_layer_t *layers;
 } ai_brain_t;
 
