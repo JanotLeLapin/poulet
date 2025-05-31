@@ -26,7 +26,7 @@ $(MAIN_TARGET): main.o $(COMMON_OBJS)
 
 $(WASM_TARGET): $(WASM_OBJS)
 	$(EMCC) $^ -o $@ \
-		-s EXPORTED_FUNCTIONS='["_w_ai_layer_t_size","_w_ai_brain_t_size","_w_chess_color_t_size","_w_chess_move_t_size","_w_chess_game_t_size","_chess_init","_chess_is_check","_chess_legal_move","_chess_safe_move","_chess_do_move","_ai_layer_free","_poulet_brain_init","_poulet_next_move","_malloc","_free"]' \
+		-s EXPORTED_FUNCTIONS='["_w_ai_layer_t_size","_w_ai_brain_t_size","_w_chess_color_t_size","_w_chess_move_t_size","_w_chess_game_t_size","_chess_init","_chess_is_check","_chess_legal_move","_chess_safe_move","_chess_do_move","_ai_brain_free","_poulet_brain_init","_poulet_next_move","_malloc","_free"]' \
 		-s EXPORTED_RUNTIME_METHODS='["ccall","cwrap","HEAPU8"]' \
 		$(LDFLAGS_WASM)
 
