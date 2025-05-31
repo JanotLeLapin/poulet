@@ -118,7 +118,14 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
         break;
       }
 
-      if (50 <= until_stalemate) {
+      if (50 <= until_stalemate || total_moves > 2048) {
+        if (scores[c] > scores[i]) {
+          scores[c] -= 100;
+          scores[i] += 100;
+        } else if (scores[c] < scores[i]) {
+          scores[c] += 100;
+          scores[i] -= 100;
+        }
         normalize_scores(scores, total_moves);
         return;
       }
@@ -131,13 +138,8 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
       }
 
       chess_do_move(game, move[1], move[0], move[3], move[2]);
-    }
 
-    total_moves += 2;
-    if (total_moves > 2048) {
-      printf("exceeded max moves\n");
-      normalize_scores(scores, total_moves);
-      return;
+      total_moves++;
     }
   }
 }
