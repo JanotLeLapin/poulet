@@ -167,6 +167,7 @@ void ai_brain_offspring(ai_brain_t *a, ai_brain_t *b, ai_brain_t *child);
 void ai_brain_forward(ai_brain_t *brain, float *input);
 int ai_brain_save(ai_brain_t *brain, const char *filename);
 int ai_brain_load(ai_brain_t *brain, const char *filename);
+int ai_brain_load_from_buffer(ai_brain_t *brain, const uint8_t *buffer, size_t buffer_length);
 void ai_brain_free(ai_brain_t *brain);
 
 void poulet_brain_init(ai_brain_t *brain);
