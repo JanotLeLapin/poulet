@@ -120,6 +120,8 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
       if (-1 == has_prediction) {
         scores[c] -= 1000;
         scores[i] += 1000;
+        scores[0] /= total_moves;
+        scores[1] /= total_moves;
         return;
       }
 
