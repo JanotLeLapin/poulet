@@ -222,7 +222,7 @@ main(int argc, char **argv)
     for (i = 0; i < POPULATION_SIZE / GROUP_SIZE; i++) {
       data[i].brains = brains;
       data[i].offset = i;
-      memset(data[i].results, 0, GROUP_SIZE * GROUP_SIZE * sizeof(int));
+      memset(data[i].results, 0, sizeof(int) * 2 * GROUP_SIZE * GROUP_SIZE);
       pthread_create(&threads[i], NULL, training_thread, &data[i]);
     }
 
