@@ -35,6 +35,7 @@ handle_sigint(int sig)
 {
   if (SIGINT == sig) {
     running = 0;
+    printf("got sigint, stopping after this generation\n");
   }
 }
 
@@ -261,6 +262,7 @@ main(int argc, char **argv)
       printf("saved elite brains\n");
     }
 
+    printf("generating offspring\n");
     for (i = ELITE_SIZE; i < POPULATION_SIZE; i++) {
       do {
         parent_a = rand() % ELITE_SIZE;
