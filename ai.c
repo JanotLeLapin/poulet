@@ -185,7 +185,15 @@ ai_brain_save(ai_brain_t *brain, const char *filename)
   fwrite(&brain->layer_count, sizeof(size_t), 1, f);
   for (i = 0; i < brain->layer_count; i++) {
     l = brain->layers[i];
-    fwrite(&l.activation, sizeof(ai_activation_t), 1, f);
+    fwrite(&l.activation.type, sizeof(ai_activation_type_t), 1, f);
+    switch (l.activation.type) {
+    case AI_ACTIVATION_NONE:
+    case AI_ACTIVATION_RELU:
+      break;
+    case AI_ACTIVATION_SOFTMAX:
+      fwrite(&l.activation.data.softmax, sizeof(ai_activation_data_softmax), 1, f);
+      break;
+    }
     fwrite(&l.input_size, sizeof(size_t), 1, f);
     fwrite(&l.output_size, sizeof(size_t), 1, f);
     fwrite(l.weights, sizeof(float), l.input_size * l.output_size, f);
@@ -210,7 +218,15 @@ ai_brain_load(ai_brain_t *brain, const char *filename)
   brain->layers = malloc(sizeof(ai_layer_t) * brain->layer_count);
   for (i = 0; i < brain->layer_count; i++) {
     l = &brain->layers[i];
-    fread(&l->activation, sizeof(ai_activation_t), 1, f);
+    fread(&l->activation.type, sizeof(ai_activation_type_t), 1, f);
+    switch (l->activation.type) {
+    case AI_ACTIVATION_NONE:
+    case AI_ACTIVATION_RELU:
+      break;
+    case AI_ACTIVATION_SOFTMAX:
+      fread(&l->activation.data.softmax, sizeof(ai_activation_data_softmax), 1, f);
+      break;
+    }
     fread(&l->input_size, sizeof(size_t), 1, f);
     fread(&l->output_size, sizeof(size_t), 1, f);
     l->weights = malloc(sizeof(float) * l->input_size * l->output_size);
@@ -237,7 +253,15 @@ ai_brain_load_from_buffer(ai_brain_t *brain, const uint8_t *buffer, size_t buffe
   BUF_READ(brain->layer_count, p, sizeof(size_t));
   for (i = 0; i < brain->layer_count; i++) {
     l = &brain->layers[i];
-    BUF_READ(l->activation, p, sizeof(ai_activation_t));
+    BUF_READ(l->activation.type, p, sizeof(ai_activation_type_t));
+    switch (l->activation.type) {
+    case AI_ACTIVATION_NONE:
+    case AI_ACTIVATION_RELU:
+      break;
+    case AI_ACTIVATION_SOFTMAX:
+      BUF_READ(l->activation.data.softmax, p, sizeof(ai_activation_data_softmax));
+      break;
+    }
     BUF_READ(l->input_size, p, sizeof(size_t));
     BUF_READ(l->output_size, p, sizeof(size_t));
     l->weights = malloc(sizeof(float) * l->input_size * l->output_size);

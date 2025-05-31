@@ -13,11 +13,13 @@ typedef enum {
 } ai_activation_type_t;
 
 typedef struct {
+  float temperature;
+} ai_activation_data_softmax;
+
+typedef struct {
   ai_activation_type_t type;
   union {
-    struct {
-      float temperature;
-    } softmax;
+    ai_activation_data_softmax softmax;
   } data;
 } ai_activation_t;
 
