@@ -115,10 +115,6 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
       has_prediction = poulet_next_move(move, game, i == 0 ? a : b, c, 0.8f);
       is_check = chess_is_check(game, c);
 
-      if (is_check) {
-        scores[c] -= 2;
-      }
-
       if ((-1 == has_prediction && !is_check) || (50 <= until_stalemate || total_moves > 2048)) {
         if (scores[c] > scores[i]) {
           scores[c] -= 100;
