@@ -102,6 +102,7 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
           piece_value = 9;
           break;
         default:
+          piece_value = 0;
           break;
         }
 
