@@ -152,15 +152,17 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
         return;
       }
 
-      scores[i] += (total_moves < 40 ? 1.0f : 0.3f) * (((float) HEAT_MAP[move[2]][move[3]]) / 24.0f);
+      piece = chess_piece_from_square(game->board[move[1]][move[0]]);
+
+      scores[i] += (total_moves < 40 ? 1.0f : 0.3f)
+                   * (((float) HEAT_MAP[move[2]][move[3]]) / 24.0f)
+                   * (CHESS_PIECE_KNIGHT == piece ? 1.2f : 1.0f);
       move_data = chess_legal_move(game, move[1], move[0], move[3], move[2]);
 
       // chess_pretty_square(src, move[1], move[0]);
       // chess_pretty_square(dst, move[3], move[2]);
 
       // printf("%ld: %s -> %s\n", i, src, dst);
-
-      piece = chess_piece_from_square(game->board[move[1]][move[0]]);
 
       if (CHESS_PIECE_PAWN == piece && (1 - i == CHESS_COLOR_WHITE ? 0 : 7) == move[3]) {
         scores[i] += 8;
