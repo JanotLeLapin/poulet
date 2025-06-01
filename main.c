@@ -54,7 +54,7 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
 {
   size_t i;
   chess_color_t c;
-  int has_prediction;
+  int has_prediction, is_check;
   uint8_t move[4], piece_value, until_stalemate = 0;
   chess_move_t move_data;
   size_t total_moves = 0;
@@ -69,8 +69,13 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
       // printf("computing\n");
       c = 1 - i;
       has_prediction = poulet_next_move(move, game, i == 0 ? a : b, c, 1.2f);
+      is_check = chess_is_check(game, c);
 
-      if ((-1 == has_prediction && !chess_is_check(game, c)) || (50 <= until_stalemate || total_moves > 2048)) {
+      if (is_check) {
+        scores[c] -= 2;
+      }
+
+      if ((-1 == has_prediction && !is_check) || (50 <= until_stalemate || total_moves > 2048)) {
         if (scores[c] > scores[i]) {
           scores[c] -= 100;
           scores[i] += 100;
