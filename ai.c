@@ -105,7 +105,7 @@ crossover(float *dst, float *a, float *b, size_t size)
   float alpha, r;
 
   for (i = 0; i < size; i++) {
-    alpha = 0.4f + ((float) rand() / RAND_MAX) * 0.2f;
+    alpha = 0.2f + ((float) rand() / RAND_MAX) * 0.6f;
     dst[i] = alpha * a[i] + (1 - alpha) * b[i];
 
     r = ((float) rand() / RAND_MAX);
