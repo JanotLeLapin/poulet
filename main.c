@@ -74,7 +74,7 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
 
     for (i = 0; i < 2; i++)  {
       // printf("computing\n");
-      c = (i + 1) % 2;
+      c = 1 - i;
       has_prediction = poulet_next_move(move, game, i == 0 ? a : b, c, 1.2f);
       move_data = chess_legal_move(game, move[1], move[0], move[3], move[2]);
 
