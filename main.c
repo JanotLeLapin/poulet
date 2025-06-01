@@ -49,13 +49,6 @@ compare_ranked_brains(const void *a, const void *b)
   return 0;
 }
 
-static inline void
-normalize_scores(float *scores, size_t total_moves)
-{
-  scores[0] /= total_moves;
-  scores[1] /= total_moves;
-}
-
 void
 game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
 {
@@ -128,14 +121,12 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
           scores[c] += 100;
           scores[i] -= 100;
         }
-        normalize_scores(scores, total_moves);
         return;
       }
 
       if (-1 == has_prediction) {
         scores[c] -= 1000;
         scores[i] += 1000;
-        normalize_scores(scores, total_moves);
         return;
       }
 
