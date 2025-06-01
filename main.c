@@ -111,7 +111,7 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
     for (i = 0; i < 2; i++)  {
       // printf("computing\n");
       c = 1 - i;
-      has_prediction = poulet_next_move(move, game, i == 0 ? a : b, c, 1.2f);
+      has_prediction = poulet_next_move(move, game, i == 0 ? a : b, c, 0.8f);
       is_check = chess_is_check(game, c);
 
       if (is_check) {
