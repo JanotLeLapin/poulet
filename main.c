@@ -100,6 +100,7 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
   int has_prediction, is_check;
   uint8_t move[4], piece_value, until_stalemate = 0;
   chess_move_t move_data;
+  chess_piece_t piece;
   size_t total_moves = 0;
   // char src[3], dst[3];
 
@@ -143,6 +144,13 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
 
       // printf("%ld: %s -> %s\n", i, src, dst);
 
+      piece = chess_piece_from_square(game->board[move[1]][move[0]]);
+
+      if (CHESS_PIECE_PAWN == piece && (c == CHESS_COLOR_WHITE ? 0 : 7) == move[2]) {
+        scores[c] += 8;
+        scores[i] -= 8;
+      }
+
       switch (move_data) {
       case CHESS_MOVE_TAKE:
         until_stalemate = 0;
@@ -176,7 +184,7 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
         scores[i]--;
         break;
       default:
-        until_stalemate = CHESS_PIECE_PAWN == chess_piece_from_square(game->board[move[0]][move[1]]) ? 0 : until_stalemate + 1;
+        until_stalemate = CHESS_PIECE_PAWN == piece ? 0 : until_stalemate + 1;
         break;
       }
 
