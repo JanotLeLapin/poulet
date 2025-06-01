@@ -8,6 +8,9 @@
 
 #define POPULATION_SIZE 256
 #define GROUP_SIZE 16
+#define GAME_COUNT 32
+#define MATCH_COUNT (POPULATION_SIZE * GAME_COUNT) / 2
+#define THREAD_COUNT 16
 #define ELITE_SIZE 8
 
 const int HEAT_MAP[8][8] = {
@@ -22,6 +25,12 @@ const int HEAT_MAP[8][8] = {
 };
 
 typedef struct {
+  size_t brain_a;
+  size_t brain_b;
+  float scores[2];
+} match_t;
+
+typedef struct {
   uint8_t src_x;
   uint8_t src_y;
   uint8_t dst_x;
@@ -29,9 +38,10 @@ typedef struct {
 } move_t;
 
 typedef struct {
-  size_t offset;
+  size_t start;
+  size_t end;
+  match_t *matches;
   ai_brain_t *brains;
-  float results[GROUP_SIZE][GROUP_SIZE][2];
 } thread_data_t;
 
 typedef struct {
@@ -47,6 +57,28 @@ handle_sigint(int sig)
   if (SIGINT == sig) {
     running = 0;
     printf("got sigint, stopping after this generation\n");
+  }
+}
+
+void
+init_matches(match_t *matches)
+{
+  size_t match_count = 0, brain_matches[POPULATION_SIZE], brain_a, brain_b;
+
+  memset(brain_matches, 0, POPULATION_SIZE * sizeof(size_t));
+  while (match_count < MATCH_COUNT) {
+    do {
+      brain_a = rand() % POPULATION_SIZE;
+      brain_b = rand() % POPULATION_SIZE;
+    } while (brain_matches[brain_a] >= GAME_COUNT || brain_matches[brain_b] >= GAME_COUNT || brain_a == brain_b);
+
+    matches[match_count].brain_a = brain_a;
+    matches[match_count].brain_b = brain_b;
+    matches[match_count].scores[0] = 0;
+    matches[match_count].scores[1] = 0;
+    brain_matches[brain_a]++;
+    brain_matches[brain_b]++;
+    match_count++;
   }
 }
 
@@ -159,23 +191,17 @@ void *
 training_thread(void *arg)
 {
   thread_data_t *data = arg;
-  size_t i, j;
-  ai_brain_t a, b;
+  size_t i;
+  ai_brain_t *a, *b;
   chess_game_t game;
 
-  for (i = 0; i < GROUP_SIZE; i++) {
-    for (j = 0; j < GROUP_SIZE; j++) {
-      if (i == j) {
-        continue;
-      }
+  for (i = data->start; i < data->end; i++) {
+    a = &data->brains[data->matches[i].brain_a];
+    b = &data->brains[data->matches[i].brain_b];
 
-      a = data->brains[i + data->offset * GROUP_SIZE];
-      b = data->brains[j + data->offset * GROUP_SIZE];
-      chess_init(&game);
-
-      game_loop(data->results[i][j], &game, &a, &b);
-      printf("game over (%ld,%ld: white: %f, black: %f)\n", i + data->offset * GROUP_SIZE, j + data->offset * GROUP_SIZE, data->results[i][j][0], data->results[i][j][1]);
-    }
+    chess_init(&game);
+    game_loop(data->matches[i].scores, &game, a, b);
+    printf("game over (%ld vs %ld: white: %f, black: %f)\n", data->matches[i].brain_a, data->matches[i].brain_b, data->matches[i].scores[0], data->matches[i].scores[1]);
   }
 
   return 0;
@@ -186,11 +212,12 @@ main(int argc, char **argv)
 {
   struct sigaction act;
   int start_gen, stop_gen;
+  match_t matches[POPULATION_SIZE * GAME_COUNT];
   ai_brain_t brains[POPULATION_SIZE], tmp_brain;
   pthread_t threads[POPULATION_SIZE / GROUP_SIZE];
   thread_data_t data[POPULATION_SIZE / GROUP_SIZE];
   ranked_brain_t ranked_brains[POPULATION_SIZE];
-  size_t i, j, k, parent_a, parent_b;
+  size_t i, j, parent_a, parent_b;
   char filename[32];
 
   act.sa_handler = handle_sigint;
@@ -229,31 +256,29 @@ main(int argc, char **argv)
 
   while (start_gen < stop_gen && running) {
     printf("-- GENERATION %d/%d --\n", start_gen, stop_gen);
-    for (i = 0; i < POPULATION_SIZE / GROUP_SIZE; i++) {
+    init_matches(matches);
+    for (i = 0; i < THREAD_COUNT; i++) {
       data[i].brains = brains;
-      data[i].offset = i;
-      memset(data[i].results, 0, sizeof(int) * 2 * GROUP_SIZE * GROUP_SIZE);
+      data[i].start = i * (MATCH_COUNT / THREAD_COUNT);
+      data[i].end = (i + 1) * (MATCH_COUNT / THREAD_COUNT);
+      data[i].matches = matches;
       pthread_create(&threads[i], NULL, training_thread, &data[i]);
     }
 
-    for (i = 0; i < POPULATION_SIZE / GROUP_SIZE; i++) {
+    for (i = 0; i < THREAD_COUNT; i++) {
       pthread_join(threads[i], NULL);
     }
 
     printf("done with groups!\n");
 
-    for (i = 0; i < POPULATION_SIZE / GROUP_SIZE; i++) {
-      for (j = 0; j < GROUP_SIZE; j++) {
-        ranked_brains[j + i * GROUP_SIZE].index = j + i * GROUP_SIZE;
-        ranked_brains[j + i * GROUP_SIZE].score = 0;
-        for (k = 0; k < GROUP_SIZE; k++) {
-          if (k == j) {
-            continue;
-          }
-          ranked_brains[j + i * GROUP_SIZE].score += data[i].results[j][k][0];
-          ranked_brains[j + i * GROUP_SIZE].score += data[i].results[k][j][1];
-        }
-      }
+    for (i = 0; i < POPULATION_SIZE; i++) {
+      ranked_brains[i].index = i;
+      ranked_brains[i].score = 0;
+    }
+
+    for (i = 0; i < MATCH_COUNT; i++) {
+      ranked_brains[matches[i].brain_a].score += matches[i].scores[0];
+      ranked_brains[matches[i].brain_b].score += matches[i].scores[1];
     }
 
     qsort(ranked_brains, POPULATION_SIZE, sizeof(ranked_brain_t), compare_ranked_brains);
