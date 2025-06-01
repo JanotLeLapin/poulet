@@ -69,6 +69,24 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
       // printf("computing\n");
       c = 1 - i;
       has_prediction = poulet_next_move(move, game, i == 0 ? a : b, c, 1.2f);
+
+      if ((-1 == has_prediction && !chess_is_check(game, c)) || (50 <= until_stalemate || total_moves > 2048)) {
+        if (scores[c] > scores[i]) {
+          scores[c] -= 100;
+          scores[i] += 100;
+        } else if (scores[c] < scores[i]) {
+          scores[c] += 100;
+          scores[i] -= 100;
+        }
+        return;
+      }
+
+      if (-1 == has_prediction) {
+        scores[c] -= 1000;
+        scores[i] += 1000;
+        return;
+      }
+
       move_data = chess_legal_move(game, move[1], move[0], move[3], move[2]);
 
       // chess_pretty_square(src, move[1], move[0]);
@@ -111,23 +129,6 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
       default:
         until_stalemate = CHESS_PIECE_PAWN == chess_piece_from_square(game->board[move[0]][move[1]]) ? 0 : until_stalemate + 1;
         break;
-      }
-
-      if ((-1 == has_prediction && !chess_is_check(game, c)) || (50 <= until_stalemate || total_moves > 2048)) {
-        if (scores[c] > scores[i]) {
-          scores[c] -= 100;
-          scores[i] += 100;
-        } else if (scores[c] < scores[i]) {
-          scores[c] += 100;
-          scores[i] -= 100;
-        }
-        return;
-      }
-
-      if (-1 == has_prediction) {
-        scores[c] -= 1000;
-        scores[i] += 1000;
-        return;
       }
 
       chess_do_move(game, move[1], move[0], move[3], move[2]);
