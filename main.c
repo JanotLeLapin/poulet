@@ -63,22 +63,41 @@ handle_sigint(int sig)
 void
 init_matches(match_t *matches)
 {
-  size_t match_count = 0, brain_matches[POPULATION_SIZE], brain_a, brain_b;
+  size_t pair_count = 0, i, j, brain_matches[POPULATION_SIZE], brain_a, brain_b, total = 0;
+  match_t possible_matches[POPULATION_SIZE * (POPULATION_SIZE - 1)], tmp_match;
 
-  memset(brain_matches, 0, POPULATION_SIZE * sizeof(size_t));
-  while (match_count < MATCH_COUNT) {
-    do {
-      brain_a = rand() % POPULATION_SIZE;
-      brain_b = rand() % POPULATION_SIZE;
-    } while (brain_matches[brain_a] >= GAME_COUNT || brain_matches[brain_b] >= GAME_COUNT);
+  for (brain_a = 0; brain_a < POPULATION_SIZE; brain_a++) {
+    for (brain_b = 0; brain_b < POPULATION_SIZE; brain_b++) {
+      if (brain_a == brain_b) {
+        continue;
+      }
 
-    matches[match_count].brain_a = brain_a;
-    matches[match_count].brain_b = brain_b;
-    matches[match_count].scores[0] = 0;
-    matches[match_count].scores[1] = 0;
-    brain_matches[brain_a]++;
-    brain_matches[brain_b]++;
-    match_count++;
+      possible_matches[pair_count].brain_a = brain_a;
+      possible_matches[pair_count].brain_b = brain_b;
+      pair_count++;
+    }
+  }
+
+  for (i = pair_count - 1; i > 0; i--) {
+    j = rand() % (i + 1);
+    tmp_match = possible_matches[i];
+    possible_matches[i] = possible_matches[j];
+    possible_matches[j] = tmp_match;
+  }
+
+  for (i = 0; i < pair_count && total < MATCH_COUNT; i++) {
+    brain_a = possible_matches[i].brain_a;
+    brain_b = possible_matches[i].brain_b;
+
+    if (brain_matches[brain_a] < GAME_COUNT && brain_matches[brain_b] < GAME_COUNT) {
+      matches[total].brain_a = brain_a;
+      matches[total].brain_b = brain_b;
+      matches[total].scores[0] = 0;
+      matches[total].scores[1] = 0;
+      brain_matches[brain_a]++;
+      brain_matches[brain_b]++;
+      total++;
+    }
   }
 }
 
