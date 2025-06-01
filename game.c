@@ -185,7 +185,7 @@ chess_is_check(chess_game_t *game, chess_color_t color)
 
   for (i = 0; i < 8; i++) {
     for (j = 0; j < 8; j++) {
-      if (0 != game->board[i][j] && CHESS_PIECE_KING != chess_piece_from_square(game->board[i][j]) && color != chess_color_from_square(game->board[i][j]) && chess_legal_move(game, j, i, kx, ky)) {
+      if (0 != game->board[i][j] && color != chess_color_from_square(game->board[i][j]) && chess_legal_move(game, j, i, kx, ky)) {
         return 1;
       }
     }
