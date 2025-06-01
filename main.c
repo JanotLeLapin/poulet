@@ -136,7 +136,7 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
         return;
       }
 
-      scores[c] += (total_moves < 40 ? 1.0f : 0.3f) * (((float) HEAT_MAP[move[2]][move[3]]) / 6.0f);
+      scores[c] += (total_moves < 40 ? 1.0f : 0.3f) * (((float) HEAT_MAP[move[2]][move[3]]) / 24.0f);
       move_data = chess_legal_move(game, move[1], move[0], move[3], move[2]);
 
       // chess_pretty_square(src, move[1], move[0]);
