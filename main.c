@@ -142,7 +142,7 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
 
       piece = chess_piece_from_square(game->board[move[1]][move[0]]);
 
-      if (CHESS_PIECE_PAWN == piece && (c == CHESS_COLOR_WHITE ? 0 : 7) == move[2]) {
+      if (CHESS_PIECE_PAWN == piece && (c == CHESS_COLOR_WHITE ? 0 : 7) == move[3]) {
         scores[c] += 8;
         scores[i] -= 8;
       }
