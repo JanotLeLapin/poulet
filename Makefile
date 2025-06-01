@@ -2,7 +2,7 @@ CC = gcc
 EMCC = emcc
 LDFLAGS = -lm
 LDFLAGS_WASM = -lm -s ALLOW_MEMORY_GROWTH=1
-CFLAGS = -Wall -Wextra -g
+CFLAGS = -Wall -Wextra -O3
 CFLAGS_WASM = -Wall -Wextra -O3
 
 COMMON_SRCS = poulet.c game.c ai.c
