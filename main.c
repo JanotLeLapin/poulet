@@ -70,7 +70,7 @@ init_matches(match_t *matches)
     do {
       brain_a = rand() % POPULATION_SIZE;
       brain_b = rand() % POPULATION_SIZE;
-    } while (brain_matches[brain_a] >= GAME_COUNT || brain_matches[brain_b] >= GAME_COUNT || brain_a == brain_b);
+    } while (brain_matches[brain_a] >= GAME_COUNT || brain_matches[brain_b] >= GAME_COUNT);
 
     matches[match_count].brain_a = brain_a;
     matches[match_count].brain_b = brain_b;
