@@ -117,11 +117,11 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
 
       if ((-1 == has_prediction && !is_check) || (50 <= until_stalemate || total_moves > 2048)) {
         if (scores[c] > scores[i]) {
-          scores[c] -= 100;
-          scores[i] += 100;
+          scores[c] -= 10;
+          scores[i] += 10;
         } else if (scores[c] < scores[i]) {
-          scores[c] += 100;
-          scores[i] -= 100;
+          scores[c] += 10;
+          scores[i] -= 10;
         }
         return;
       }
