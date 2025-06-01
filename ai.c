@@ -4,6 +4,9 @@
 
 #include "poulet.h"
 
+#define MUTATION_RATE 0.15f
+#define MUTATION_AMPLITUDE 0.3f
+
 #define BURST_CHANCE 0.05f
 #define BURST_AMPLITUDE 0.5f
 
@@ -105,11 +108,11 @@ crossover(float *dst, float *a, float *b, size_t size)
     alpha = 0.4f + ((float) rand() / RAND_MAX) * 0.2f;
     dst[i] = alpha * a[i] + (1 - alpha) * b[i];
 
-    r = ((float) rand() / RAND_MAX) < 0.01f;
+    r = ((float) rand() / RAND_MAX);
 
-    if (r < 0.01f) {
-      dst[i] += 0.1f * gaussian_noise();
-    } else if (r < 0.01 + BURST_CHANCE) {
+    if (r < MUTATION_RATE) {
+      dst[i] += MUTATION_AMPLITUDE * gaussian_noise();
+    } else if (r < MUTATION_RATE + BURST_CHANCE) {
       dst[i] += BURST_AMPLITUDE * gaussian_noise();
     }
   }
