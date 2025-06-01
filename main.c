@@ -103,6 +103,9 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
   size_t total_moves = 0;
   // char src[3], dst[3];
 
+  scores[0] = 0;
+  scores[1] = 0;
+
   for (;;) {
     // if ('q' == fgetc(stdin)) {
     //   return;
