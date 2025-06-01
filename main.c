@@ -10,6 +10,17 @@
 #define GROUP_SIZE 16
 #define ELITE_SIZE 8
 
+const int HEAT_MAP[8][8] = {
+  { 0, 0, 1, 2, 2, 1, 0, 0 },
+  { 0, 1, 2, 3, 3, 2, 1, 0 },
+  { 1, 2, 3, 4, 4, 3, 2, 1 },
+  { 2, 3, 4, 5, 5, 4, 3, 2 },
+  { 2, 3, 4, 5, 5, 4, 3, 2 },
+  { 1, 2, 3, 4, 4, 3, 2, 1 },
+  { 0, 1, 2, 3, 3, 2, 1, 0 },
+  { 0, 0, 1, 2, 2, 1, 0, 0 },
+};
+
 typedef struct {
   uint8_t src_x;
   uint8_t src_y;
@@ -92,6 +103,7 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
         return;
       }
 
+      scores[c] += (total_moves < 40 ? 1.0f : 0.3f) * (((float) HEAT_MAP[move[2]][move[3]]) / 6.0f);
       move_data = chess_legal_move(game, move[1], move[0], move[3], move[2]);
 
       // chess_pretty_square(src, move[1], move[0]);
