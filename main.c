@@ -96,7 +96,6 @@ void
 game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
 {
   size_t i;
-  chess_color_t c;
   int has_prediction, is_check;
   uint8_t move[4], piece_value, until_stalemate = 0;
   chess_move_t move_data;
@@ -111,28 +110,27 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
 
     for (i = 0; i < 2; i++)  {
       // printf("computing\n");
-      c = 1 - i;
-      has_prediction = poulet_next_move(move, game, i == 0 ? a : b, c, 0.8f);
-      is_check = chess_is_check(game, c);
+      has_prediction = poulet_next_move(move, game, i == 0 ? a : b, 1 - i, 0.8f);
+      is_check = chess_is_check(game, 1 - i);
 
       if ((-1 == has_prediction && !is_check) || (50 <= until_stalemate || total_moves > 2048)) {
-        if (scores[c] > scores[i]) {
-          scores[c] -= 10;
-          scores[i] += 10;
-        } else if (scores[c] < scores[i]) {
-          scores[c] += 10;
+        if (scores[i] > scores[1 - i]) {
           scores[i] -= 10;
+          scores[1 - i] += 10;
+        } else if (scores[i] < scores[1 - i]) {
+          scores[i] += 10;
+          scores[1 - i] -= 10;
         }
         return;
       }
 
       if (-1 == has_prediction) {
-        scores[c] -= 1000;
-        scores[i] += 1000;
+        scores[i] -= 1000;
+        scores[1 - i] += 1000;
         return;
       }
 
-      scores[c] += (total_moves < 40 ? 1.0f : 0.3f) * (((float) HEAT_MAP[move[2]][move[3]]) / 24.0f);
+      scores[i] += (total_moves < 40 ? 1.0f : 0.3f) * (((float) HEAT_MAP[move[2]][move[3]]) / 24.0f);
       move_data = chess_legal_move(game, move[1], move[0], move[3], move[2]);
 
       // chess_pretty_square(src, move[1], move[0]);
@@ -142,9 +140,9 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
 
       piece = chess_piece_from_square(game->board[move[1]][move[0]]);
 
-      if (CHESS_PIECE_PAWN == piece && (c == CHESS_COLOR_WHITE ? 0 : 7) == move[3]) {
-        scores[c] += 8;
-        scores[i] -= 8;
+      if (CHESS_PIECE_PAWN == piece && (1 - i == CHESS_COLOR_WHITE ? 0 : 7) == move[3]) {
+        scores[i] += 8;
+        scores[1 - i] -= 8;
       }
 
       switch (move_data) {
@@ -170,14 +168,14 @@ game_loop(float *scores, chess_game_t *game, ai_brain_t *a, ai_brain_t *b)
           break;
         }
 
-        scores[c] += piece_value;
-        scores[i] -= piece_value;
+        scores[i] += piece_value;
+        scores[1 - i] -= piece_value;
         break;
       case CHESS_MOVE_TAKE_ENPASSANT:
         until_stalemate = 0;
 
-        scores[c]++;
-        scores[i]--;
+        scores[i]++;
+        scores[1 - i]--;
         break;
       default:
         until_stalemate = CHESS_PIECE_PAWN == piece ? 0 : until_stalemate + 1;
