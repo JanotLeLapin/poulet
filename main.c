@@ -236,12 +236,12 @@ main(int argc, char **argv)
 {
   struct sigaction act;
   int start_gen, stop_gen;
-  match_t matches[POPULATION_SIZE * GAME_COUNT];
+  match_t matches[MATCH_COUNT];
   ai_brain_t brains[POPULATION_SIZE], tmp_brain;
   pthread_t threads[THREAD_COUNT];
   thread_data_t data[THREAD_COUNT];
   ranked_brain_t ranked_brains[POPULATION_SIZE];
-  size_t i, j, parent_a, parent_b;
+  size_t i, j, match_count, thread_start, parent_a, parent_b;
   char filename[32];
 
   act.sa_handler = handle_sigint;
@@ -280,13 +280,15 @@ main(int argc, char **argv)
 
   while (start_gen < stop_gen && running) {
     printf("-- GENERATION %d/%d --\n", start_gen, stop_gen);
-    init_matches(matches);
+    match_count = init_matches(matches);
+    thread_start = 0;
     for (i = 0; i < THREAD_COUNT; i++) {
       data[i].brains = brains;
-      data[i].start = i * (MATCH_COUNT / THREAD_COUNT);
-      data[i].end = (i + 1) * (MATCH_COUNT / THREAD_COUNT);
+      data[i].start = thread_start;
+      data[i].end = thread_start + (match_count / THREAD_COUNT) + (i < (match_count % THREAD_COUNT) ? 1 : 0);
       data[i].matches = matches;
       pthread_create(&threads[i], NULL, training_thread, &data[i]);
+      thread_start = data[i].end;
     }
 
     for (i = 0; i < THREAD_COUNT; i++) {
