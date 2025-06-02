@@ -7,9 +7,8 @@
 #include "poulet.h"
 
 #define POPULATION_SIZE 256
-#define GROUP_SIZE 16
-#define GAME_COUNT 32
-#define MATCH_COUNT (POPULATION_SIZE * GAME_COUNT) / 2
+#define GAME_COUNT 16
+#define MATCH_COUNT (POPULATION_SIZE * GAME_COUNT / 2)
 #define THREAD_COUNT 16
 #define ELITE_SIZE 8
 
