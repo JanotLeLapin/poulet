@@ -302,7 +302,7 @@ main(int argc, char **argv)
       ranked_brains[i].score = 0;
     }
 
-    for (i = 0; i < MATCH_COUNT; i++) {
+    for (i = 0; i < match_count; i++) {
       ranked_brains[matches[i].brain_a].score += matches[i].scores[0];
       ranked_brains[matches[i].brain_b].score += matches[i].scores[1];
     }
