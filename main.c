@@ -240,8 +240,8 @@ main(int argc, char **argv)
   int start_gen, stop_gen;
   match_t matches[POPULATION_SIZE * GAME_COUNT];
   ai_brain_t brains[POPULATION_SIZE], tmp_brain;
-  pthread_t threads[POPULATION_SIZE / GROUP_SIZE];
-  thread_data_t data[POPULATION_SIZE / GROUP_SIZE];
+  pthread_t threads[THREAD_COUNT];
+  thread_data_t data[THREAD_COUNT];
   ranked_brain_t ranked_brains[POPULATION_SIZE];
   size_t i, j, parent_a, parent_b;
   char filename[32];
