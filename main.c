@@ -59,46 +59,44 @@ handle_sigint(int sig)
   }
 }
 
-void
+size_t
 init_matches(match_t *matches)
 {
-  size_t pair_count = 0, i, j, brain_matches[POPULATION_SIZE], brain_a, brain_b, total = 0;
-  match_t possible_matches[POPULATION_SIZE * (POPULATION_SIZE - 1)], tmp_match;
+  size_t total = 0, attempts = 0, max_attempts = POPULATION_SIZE * POPULATION_SIZE * 10, match_count[POPULATION_SIZE] = {0}, brain_a, brain_b;
+  char has_match[POPULATION_SIZE][POPULATION_SIZE] = {{0}};
 
-  memset(brain_matches, 0, sizeof(size_t) * POPULATION_SIZE);
-  for (brain_a = 0; brain_a < POPULATION_SIZE; brain_a++) {
-    for (brain_b = 0; brain_b < POPULATION_SIZE; brain_b++) {
-      if (brain_a == brain_b) {
-        continue;
-      }
-
-      possible_matches[pair_count].brain_a = brain_a;
-      possible_matches[pair_count].brain_b = brain_b;
-      pair_count++;
+  while (attempts < max_attempts && total < MATCH_COUNT) {
+    brain_a = rand() % POPULATION_SIZE;
+    brain_b = rand() % POPULATION_SIZE;
+    if (brain_a == brain_b) {
+      attempts++;
+      continue;
     }
-  }
 
-  for (i = pair_count - 1; i > 0; i--) {
-    j = rand() % (i + 1);
-    tmp_match = possible_matches[i];
-    possible_matches[i] = possible_matches[j];
-    possible_matches[j] = tmp_match;
-  }
-
-  for (i = 0; i < pair_count && total < MATCH_COUNT; i++) {
-    brain_a = possible_matches[i].brain_a;
-    brain_b = possible_matches[i].brain_b;
-
-    if (brain_matches[brain_a] < GAME_COUNT && brain_matches[brain_b] < GAME_COUNT) {
-      matches[total].brain_a = brain_a;
-      matches[total].brain_b = brain_b;
-      matches[total].scores[0] = 0;
-      matches[total].scores[1] = 0;
-      brain_matches[brain_a]++;
-      brain_matches[brain_b]++;
-      total++;
+    if (has_match[brain_a][brain_b]) {
+      attempts++;
+      continue;
     }
+
+    if (match_count[brain_a] >= GAME_COUNT || match_count[brain_b] >= GAME_COUNT) {
+      attempts++;
+      continue;
+    }
+
+    has_match[brain_a][brain_b]++;
+    match_count[brain_a]++;
+    match_count[brain_b]++;
+
+    matches[total].brain_a = brain_a;
+    matches[total].brain_b = brain_b;
+    matches[total].scores[0] = 0.0f;
+    matches[total].scores[1] = 0.0f;
+
+    total++;
+    attempts = 0;
   }
+
+  return total;
 }
 
 int
