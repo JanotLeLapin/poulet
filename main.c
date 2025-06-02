@@ -66,6 +66,7 @@ init_matches(match_t *matches)
   size_t pair_count = 0, i, j, brain_matches[POPULATION_SIZE], brain_a, brain_b, total = 0;
   match_t possible_matches[POPULATION_SIZE * (POPULATION_SIZE - 1)], tmp_match;
 
+  memset(brain_matches, 0, sizeof(size_t) * POPULATION_SIZE);
   for (brain_a = 0; brain_a < POPULATION_SIZE; brain_a++) {
     for (brain_b = 0; brain_b < POPULATION_SIZE; brain_b++) {
       if (brain_a == brain_b) {
