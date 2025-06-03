@@ -153,8 +153,47 @@ impl Game {
         }
     }
 
+    pub fn bishop_legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
+        let square = match self.board.get_square(src_x, src_y) {
+            Some(v) => v,
+            None => return false,
+        };
+
+        if src_x.abs_diff(dst_x) != src_y.abs_diff(dst_y) {
+            return false;
+        }
+
+        match self.board.get_square(dst_x, dst_y) {
+            Some(Piece { color, .. }) => {
+                if color == square.color {
+                    return false;
+                }
+            }
+            None => {}
+        }
+
+        let xstep: i8 = if dst_x < src_x { -1 } else { 1 };
+        let ystep: i8 = if dst_y < src_y { -1 } else { 1 };
+
+        for i in 1..src_x.abs_diff(dst_x) {
+            match self.board.get_square(
+                (src_x as i8 + (xstep * i as i8)) as u8,
+                (src_y as i8 + (ystep * i as i8)) as u8,
+            ) {
+                Some(_) => return false,
+                None => continue,
+            }
+        }
+
+        true
+    }
+
     pub fn legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
         if src_x >= 8 || src_y >= 8 || dst_x >= 8 || dst_y >= 8 {
+            return false;
+        }
+
+        if src_x == dst_x && src_y == dst_y {
             return false;
         }
 
@@ -165,6 +204,7 @@ impl Game {
 
         match square.piece_type {
             PieceType::Pawn => self.pawn_legal_move(src_x, src_y, dst_x, dst_y),
+            PieceType::Bishop => self.bishop_legal_move(src_x, src_y, dst_x, dst_y),
             _ => false,
         }
     }
@@ -217,6 +257,26 @@ mod tests {
 
         let game = setup_board(&[(1, 1, White, Pawn), (1, 2, White, Knight)]);
         assert!(!game.legal_move(1, 1, 1, 3));
+    }
+
+    #[test]
+    fn bishop_move() {
+        let game = Game::default();
+        assert!(!game.legal_move(1, 7, 2, 6));
+
+        let game = setup_board(&[(4, 5, White, Bishop)]);
+        assert!(game.legal_move(4, 5, 7, 2));
+        assert!(game.legal_move(4, 5, 2, 3));
+
+        let game = setup_board(&[(1, 1, Black, Bishop), (3, 3, White, Knight)]);
+        assert!(game.legal_move(1, 1, 2, 2));
+        assert!(game.legal_move(1, 1, 3, 3));
+        assert!(!game.legal_move(1, 1, 4, 4));
+
+        let game = setup_board(&[(1, 1, Black, Bishop), (3, 3, Black, Knight)]);
+        assert!(game.legal_move(1, 1, 2, 2));
+        assert!(!game.legal_move(1, 1, 3, 3));
+        assert!(!game.legal_move(1, 1, 4, 4));
     }
 
     fn setup_board(pieces: &[(u8, u8, Color, PieceType)]) -> Game {
