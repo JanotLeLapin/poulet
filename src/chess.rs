@@ -139,11 +139,7 @@ impl Game {
 
                 true
             }
-            Some(Piece { color, .. }) => {
-                if square.color == color {
-                    return false;
-                }
-
+            Some(_) => {
                 if dst_x.abs_diff(src_x) != 1 || (dst_y as i8 - src_y as i8) != direction {
                     return false;
                 }
@@ -154,22 +150,8 @@ impl Game {
     }
 
     pub fn bishop_legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
-        let square = match self.board.get_square(src_x, src_y) {
-            Some(v) => v,
-            None => return false,
-        };
-
         if src_x.abs_diff(dst_x) != src_y.abs_diff(dst_y) {
             return false;
-        }
-
-        match self.board.get_square(dst_x, dst_y) {
-            Some(Piece { color, .. }) => {
-                if color == square.color {
-                    return false;
-                }
-            }
-            None => {}
         }
 
         let xstep: i8 = if dst_x < src_x { -1 } else { 1 };
@@ -201,6 +183,15 @@ impl Game {
             Some(v) => v,
             None => return false,
         };
+
+        match self.board.get_square(dst_x, dst_y) {
+            Some(Piece { color, .. }) => {
+                if square.color == color {
+                    return false;
+                }
+            }
+            None => {}
+        }
 
         match square.piece_type {
             PieceType::Pawn => self.pawn_legal_move(src_x, src_y, dst_x, dst_y),
