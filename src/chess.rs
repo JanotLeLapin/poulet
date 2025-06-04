@@ -388,6 +388,54 @@ impl Game {
             !is_check
         }
     }
+
+    pub fn do_move(&mut self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) {
+        if !self.safe_move(src_x, src_y, dst_x, dst_y) {
+            return;
+        }
+
+        let src = match self.board.get_square(src_x, src_y) {
+            Some(v) => v,
+            None => return,
+        };
+
+        if PieceType::King == src.piece_type {
+            self.castling_rights[src.color as usize] = false;
+        }
+
+        if PieceType::Pawn == src.piece_type {
+            self.until_stalemate = 0;
+        } else {
+            self.until_stalemate += 1;
+        }
+
+        if PieceType::King == src.piece_type && src_x.abs_diff(dst_x) == 2 {
+            self.board.set_square(src_x, src_y, None);
+            self.board.set_square(dst_x, dst_y, Some(src));
+            let (rook_src, rook_dst) = if dst_x < src_x {
+                (0, dst_x + 1)
+            } else {
+                (7, dst_x - 1)
+            };
+
+            self.board.set_square(rook_src, src_y, None);
+            self.board.set_square(
+                rook_dst,
+                src_y,
+                Some(Piece::new(src.color, PieceType::Rook)),
+            );
+        } else if PieceType::Pawn == src.piece_type
+            && ((Color::White == src.color && dst_y == 7)
+                || (Color::Black == src.color && dst_y == 0))
+        {
+            self.board.set_square(src_x, src_y, None);
+            self.board
+                .set_square(dst_x, dst_y, Some(Piece::new(src.color, PieceType::Queen)));
+        } else {
+            self.board.set_square(src_x, src_y, None);
+            self.board.set_square(dst_x, dst_y, Some(src));
+        }
+    }
 }
 
 #[cfg(test)]
@@ -505,6 +553,9 @@ mod tests {
         let mut game = setup_board(&[(4, 7, Black, King), (0, 7, Black, Rook)], Black);
         assert!(!game.legal_move(4, 7, 6, 7));
         assert!(game.legal_move(4, 7, 2, 7));
+        game.do_move(4, 7, 2, 7);
+        assert_eq!(Some(Piece::new(Black, King)), game.board.get_square(2, 7));
+        assert_eq!(Some(Piece::new(Black, Rook)), game.board.get_square(3, 7));
 
         let mut game = setup_board(
             &[
@@ -533,6 +584,9 @@ mod tests {
         assert!(game.safe_move(4, 7, 6, 7));
         assert!(!game.safe_move(4, 7, 2, 7));
         assert_eq!(game.board, game_clone.board);
+        game.do_move(4, 7, 6, 7);
+        assert_eq!(Some(Piece::new(Black, King)), game.board.get_square(6, 7));
+        assert_eq!(Some(Piece::new(Black, Rook)), game.board.get_square(5, 7));
 
         let mut game = setup_board(
             &[
