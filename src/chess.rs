@@ -383,6 +383,11 @@ impl Game {
             Some(v) => v,
             None => return false,
         };
+
+        if src.color != self.turn {
+            return false;
+        }
+
         let dst = self.board.get_square(dst_x, dst_y);
 
         if PieceType::King == src.piece_type && src_x.abs_diff(dst_x) == 2 {
@@ -469,6 +474,12 @@ impl Game {
             self.board.set_square(src_x, src_y, None);
             self.board.set_square(dst_x, dst_y, Some(src));
         }
+
+        self.turn = if self.turn == Color::White {
+            Color::Black
+        } else {
+            Color::White
+        };
     }
 }
 
