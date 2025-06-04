@@ -23,6 +23,19 @@ pub enum PieceType {
     King,
 }
 
+impl Into<usize> for PieceType {
+    fn into(self) -> usize {
+        match self {
+            Self::Pawn => 0,
+            Self::Bishop => 1,
+            Self::Knight => 2,
+            Self::Rook => 3,
+            Self::Queen => 4,
+            Self::King => 5,
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Piece {
     pub color: Color,
