@@ -111,6 +111,14 @@ impl Default for Game {
 }
 
 impl Game {
+    fn get_en_passant(&self, file: u8) -> bool {
+        self.en_passant & (1 << file) != 0
+    }
+
+    fn set_en_passant(&mut self, file: u8) {
+        self.en_passant |= 1 << file;
+    }
+
     fn pawn_legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
         let square = match self.board.get_square(src_x, src_y) {
             Some(v) => v,
@@ -124,6 +132,14 @@ impl Game {
 
         match self.board.get_square(dst_x, dst_y) {
             None => {
+                if self.get_en_passant(dst_x)
+                    && src_x.abs_diff(dst_x) == 1
+                    && (dst_y as i8 - src_y as i8) == direction
+                    && if square.color == Color::White { 5 } else { 2 } == dst_y
+                {
+                    return true;
+                }
+
                 if src_x != dst_x {
                     return false;
                 }
@@ -403,8 +419,13 @@ impl Game {
             self.castling_rights[src.color as usize] = false;
         }
 
+        self.en_passant = 0;
+
         if PieceType::Pawn == src.piece_type {
             self.until_stalemate = 0;
+            if src_y.abs_diff(dst_y) == 2 {
+                self.set_en_passant(src_x);
+            }
         } else {
             self.until_stalemate += 1;
         }
@@ -449,8 +470,11 @@ mod tests {
         let mut game = Game::default();
         game.turn = Black;
 
-        assert!(game.legal_move(3, 6, 3, 4));
         assert!(!game.legal_move(3, 6, 3, 3));
+        assert!(game.legal_move(3, 6, 3, 4));
+        game.do_move(3, 6, 3, 4);
+        assert!(game.get_en_passant(3));
+        assert!(!game.get_en_passant(4));
 
         let game = setup_board(&[(1, 1, White, Pawn)], White);
         assert!(!game.legal_move(1, 1, 2, 1));
@@ -486,6 +510,11 @@ mod tests {
 
         let game = setup_board(&[(1, 1, White, Pawn), (1, 2, White, Knight)], White);
         assert!(!game.legal_move(1, 1, 1, 3));
+
+        let mut game = setup_board(&[(4, 4, White, Pawn), (5, 4, Black, Pawn)], White);
+        assert!(!game.safe_move(4, 4, 5, 5));
+        game.set_en_passant(5);
+        assert!(game.safe_move(4, 4, 5, 5));
     }
 
     #[test]
