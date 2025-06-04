@@ -240,13 +240,7 @@ impl Game {
         let rook = self
             .board
             .get_square((src_x as i8 + (until as i8 + 1) * direction) as u8, src_y);
-        println!("{:?}", rook);
         if Some(Piece::new(square.color, PieceType::Rook)) != rook {
-            println!(
-                "not what we were looking for at {} {}",
-                (src_x as i8 + (until as i8 + 1) * direction) as u8,
-                src_y
-            );
             return false;
         }
 
@@ -256,7 +250,6 @@ impl Game {
                 .get_square((src_x as i8 + i as i8 * direction) as u8, src_y)
             {
                 Some(_) => {
-                    println!("found something on i == {}", i);
                     return false;
                 }
                 None => continue,
