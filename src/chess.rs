@@ -212,12 +212,12 @@ impl Game {
         true
     }
 
-    fn legal_queen(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
+    fn queen_legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
         self.bishop_legal_move(src_x, src_y, dst_x, dst_y)
             || self.rook_legal_move(src_x, src_y, dst_x, dst_y)
     }
 
-    fn king_legal(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
+    fn king_legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
         if src_x.abs_diff(dst_x) <= 1 && src_y.abs_diff(dst_y) <= 1 {
             return true;
         }
@@ -293,8 +293,8 @@ impl Game {
             PieceType::Pawn => self.pawn_legal_move(src_x, src_y, dst_x, dst_y),
             PieceType::Bishop => self.bishop_legal_move(src_x, src_y, dst_x, dst_y),
             PieceType::Rook => self.rook_legal_move(src_x, src_y, dst_x, dst_y),
-            PieceType::Queen => self.legal_queen(src_x, src_y, dst_x, dst_y),
-            PieceType::King => self.king_legal(src_x, src_y, dst_x, dst_y),
+            PieceType::Queen => self.queen_legal_move(src_x, src_y, dst_x, dst_y),
+            PieceType::King => self.king_legal_move(src_x, src_y, dst_x, dst_y),
             _ => false,
         }
     }
