@@ -78,10 +78,27 @@ impl Layer {
                 });
             }
             Activation::Softmax { temperature } => {
-                unimplemented!();
+                softmax(&mut self.outputs);
             }
         }
     }
 }
 
 pub type Network = Vec<Layer>;
+
+pub fn softmax(logits: &mut Vec<f64>) {
+    let max = match logits.iter().max_by(|a, b| a.partial_cmp(b).unwrap()) {
+        Some(v) => *v,
+        None => return,
+    };
+
+    let mut sum_exp = 0.0;
+    for v in logits.iter_mut() {
+        *v = (*v - max).exp();
+        sum_exp += *v;
+    }
+
+    for v in logits.iter_mut() {
+        *v /= sum_exp;
+    }
+}
