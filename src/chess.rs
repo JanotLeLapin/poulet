@@ -4,6 +4,15 @@ pub enum Color {
     Black,
 }
 
+impl Into<usize> for Color {
+    fn into(self) -> usize {
+        match self {
+            Self::White => 0,
+            Self::Black => 1,
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum PieceType {
     Pawn,
@@ -208,6 +217,55 @@ impl Game {
             || self.rook_legal_move(src_x, src_y, dst_x, dst_y)
     }
 
+    fn king_legal(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
+        if src_x.abs_diff(dst_x) <= 1 && src_y.abs_diff(dst_y) <= 1 {
+            return true;
+        }
+
+        let square = match self.board.get_square(src_x, src_y) {
+            Some(v) => v,
+            None => return false,
+        };
+
+        if !self.castling_rights[square.color as usize] {
+            return false;
+        }
+
+        if dst_y != src_y || src_x.abs_diff(dst_x) != 2 {
+            return false;
+        }
+
+        let (direction, until) = if dst_x < src_x { (-1, 3) } else { (1, 2) };
+
+        let rook = self
+            .board
+            .get_square((src_x as i8 + (until as i8 + 1) * direction) as u8, src_y);
+        println!("{:?}", rook);
+        if Some(Piece::new(square.color, PieceType::Rook)) != rook {
+            println!(
+                "not what we were looking for at {} {}",
+                (src_x as i8 + (until as i8 + 1) * direction) as u8,
+                src_y
+            );
+            return false;
+        }
+
+        for i in 1..until + 1 {
+            match self
+                .board
+                .get_square((src_x as i8 + i as i8 * direction) as u8, src_y)
+            {
+                Some(_) => {
+                    println!("found something on i == {}", i);
+                    return false;
+                }
+                None => continue,
+            }
+        }
+
+        true
+    }
+
     pub fn legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
         if src_x >= 8 || src_y >= 8 || dst_x >= 8 || dst_y >= 8 {
             return false;
@@ -236,6 +294,7 @@ impl Game {
             PieceType::Bishop => self.bishop_legal_move(src_x, src_y, dst_x, dst_y),
             PieceType::Rook => self.rook_legal_move(src_x, src_y, dst_x, dst_y),
             PieceType::Queen => self.legal_queen(src_x, src_y, dst_x, dst_y),
+            PieceType::King => self.king_legal(src_x, src_y, dst_x, dst_y),
             _ => false,
         }
     }
@@ -330,6 +389,31 @@ mod tests {
         assert!(game.legal_move(4, 3, 5, 3));
         assert!(!game.legal_move(4, 3, 6, 3));
         assert!(!game.legal_move(4, 3, 7, 3));
+    }
+
+    #[test]
+    fn king_move() {
+        let game = setup_board(&[(4, 7, Black, King)]);
+        assert!(game.legal_move(4, 7, 5, 7));
+        assert!(game.legal_move(4, 7, 5, 6));
+        assert!(game.legal_move(4, 7, 3, 6));
+        assert!(!game.legal_move(4, 7, 4, 5));
+
+        let game = setup_board(&[(4, 7, Black, King)]);
+        assert!(!game.legal_move(4, 7, 6, 7));
+        assert!(!game.legal_move(4, 7, 2, 7));
+
+        let game = setup_board(&[(4, 7, Black, King), (7, 7, White, Rook)]);
+        assert!(!game.legal_move(4, 7, 6, 7));
+        assert!(!game.legal_move(4, 7, 2, 7));
+
+        let game = setup_board(&[(4, 7, Black, King), (7, 7, Black, Rook)]);
+        assert!(game.legal_move(4, 7, 6, 7));
+        assert!(!game.legal_move(4, 7, 2, 7));
+
+        let game = setup_board(&[(4, 7, Black, King), (0, 7, Black, Rook)]);
+        assert!(!game.legal_move(4, 7, 6, 7));
+        assert!(game.legal_move(4, 7, 2, 7));
     }
 
     fn setup_board(pieces: &[(u8, u8, Color, PieceType)]) -> Game {
