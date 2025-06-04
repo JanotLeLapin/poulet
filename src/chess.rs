@@ -39,7 +39,7 @@ pub type Square = Option<Piece>;
 
 pub type Position = (u8, u8);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Board(pub [Square; 64]);
 
 impl Board {
@@ -357,18 +357,18 @@ impl Game {
         let dst = self.board.get_square(dst_x, dst_y);
 
         if PieceType::King == src.piece_type && src_x.abs_diff(dst_x) == 2 {
-            let (direction, until) = if dst_x < src_x { (-1, 3) } else { (1, 2) };
+            let direction = if dst_x < src_x { -1 } else { 1 };
 
             let mut is_check = false;
 
-            for i in 0..until + 2 {
+            for i in 0..3 {
                 self.board
                     .set_square((src_x as i8 + i * direction) as u8, src_y, Some(src));
 
                 if self.is_check(src.color) {
                     is_check = true;
-                    break;
                 }
+
                 self.board
                     .set_square((src_x as i8 + i * direction) as u8, src_y, None);
             }
@@ -502,7 +502,7 @@ mod tests {
         assert!(game.legal_move(4, 7, 6, 7));
         assert!(!game.legal_move(4, 7, 2, 7));
 
-        let game = setup_board(&[(4, 7, Black, King), (0, 7, Black, Rook)], Black);
+        let mut game = setup_board(&[(4, 7, Black, King), (0, 7, Black, Rook)], Black);
         assert!(!game.legal_move(4, 7, 6, 7));
         assert!(game.legal_move(4, 7, 2, 7));
 
@@ -515,8 +515,10 @@ mod tests {
             ],
             Black,
         );
+        let game_clone = game.clone();
         assert!(!game.safe_move(4, 7, 6, 7));
         assert!(!game.safe_move(4, 7, 2, 7));
+        assert_eq!(game.board, game_clone.board);
 
         let mut game = setup_board(
             &[
@@ -527,8 +529,10 @@ mod tests {
             ],
             Black,
         );
+        let game_clone = game.clone();
         assert!(game.safe_move(4, 7, 6, 7));
         assert!(!game.safe_move(4, 7, 2, 7));
+        assert_eq!(game.board, game_clone.board);
 
         let mut game = setup_board(
             &[
@@ -540,7 +544,19 @@ mod tests {
             Black,
         );
         assert!(game.safe_move(4, 7, 6, 7));
-        assert!(!game.safe_move(4, 7, 2, 7));
+        assert!(game.safe_move(4, 7, 2, 7));
+
+        let mut game = setup_board(
+            &[
+                (4, 7, Black, King),
+                (0, 7, Black, Rook),
+                (7, 7, Black, Rook),
+                (1, 5, White, Rook),
+            ],
+            Black,
+        );
+        assert!(game.safe_move(4, 7, 6, 7));
+        assert!(game.safe_move(4, 7, 2, 7));
 
         let mut game = setup_board(
             &[
@@ -551,7 +567,7 @@ mod tests {
             ],
             Black,
         );
-        assert!(!game.safe_move(4, 7, 6, 7));
+        assert!(game.safe_move(4, 7, 6, 7));
         assert!(game.safe_move(4, 7, 2, 7));
 
         let mut game = setup_board(
