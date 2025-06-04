@@ -266,6 +266,13 @@ impl Game {
         true
     }
 
+    pub fn knight_legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
+        let dist_x = src_x.abs_diff(dst_x);
+        let dist_y = src_y.abs_diff(dst_y);
+
+        (dist_x == 2 && dist_y == 1) || (dist_x == 1 && dist_y == 2)
+    }
+
     pub fn legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
         if src_x >= 8 || src_y >= 8 || dst_x >= 8 || dst_y >= 8 {
             return false;
@@ -295,7 +302,7 @@ impl Game {
             PieceType::Rook => self.rook_legal_move(src_x, src_y, dst_x, dst_y),
             PieceType::Queen => self.queen_legal_move(src_x, src_y, dst_x, dst_y),
             PieceType::King => self.king_legal_move(src_x, src_y, dst_x, dst_y),
-            _ => false,
+            PieceType::Knight => self.knight_legal_move(src_x, src_y, dst_x, dst_y),
         }
     }
 }
@@ -414,6 +421,22 @@ mod tests {
         let game = setup_board(&[(4, 7, Black, King), (0, 7, Black, Rook)]);
         assert!(!game.legal_move(4, 7, 6, 7));
         assert!(game.legal_move(4, 7, 2, 7));
+    }
+
+    #[test]
+    fn knight_move() {
+        let game = setup_board(&[(2, 5, White, Knight)]);
+        assert!(game.legal_move(2, 5, 1, 7));
+        assert!(game.legal_move(2, 5, 1, 3));
+        assert!(!game.legal_move(2, 5, 2, 2));
+
+        let game = setup_board(&[
+            (5, 5, White, Knight),
+            (4, 3, White, Pawn),
+            (6, 3, Black, Queen),
+        ]);
+        assert!(!game.legal_move(5, 5, 4, 3));
+        assert!(game.legal_move(5, 5, 6, 3));
     }
 
     fn setup_board(pieces: &[(u8, u8, Color, PieceType)]) -> Game {
