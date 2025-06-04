@@ -149,7 +149,7 @@ impl Game {
         }
     }
 
-    pub fn bishop_legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
+    fn bishop_legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
         if src_x.abs_diff(dst_x) != src_y.abs_diff(dst_y) {
             return false;
         }
@@ -170,7 +170,7 @@ impl Game {
         true
     }
 
-    pub fn rook_legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
+    fn rook_legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
         let dist_x = src_x.abs_diff(dst_x);
         let dist_y = src_y.abs_diff(dst_y);
         let dist = dist_x + dist_y;
@@ -203,7 +203,7 @@ impl Game {
         true
     }
 
-    pub fn legal_queen(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
+    fn legal_queen(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
         self.bishop_legal_move(src_x, src_y, dst_x, dst_y)
             || self.rook_legal_move(src_x, src_y, dst_x, dst_y)
     }
