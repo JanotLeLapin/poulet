@@ -595,6 +595,19 @@ mod tests {
         );
         assert!(!game.legal_move(5, 5, 4, 3));
         assert!(game.legal_move(5, 5, 6, 3));
+
+        let mut game = setup_board(
+            &[
+                (5, 5, White, Knight),
+                (4, 3, White, Pawn),
+                (6, 3, Black, Queen),
+                (7, 7, Black, Bishop),
+                (4, 4, White, King),
+            ],
+            White,
+        );
+        assert!(!game.safe_move(5, 5, 4, 3));
+        assert!(!game.safe_move(5, 5, 6, 3));
     }
 
     fn setup_board(pieces: &[(u8, u8, Color, PieceType)], turn: Color) -> Game {
