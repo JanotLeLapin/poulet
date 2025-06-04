@@ -282,9 +282,9 @@ impl Game {
             None => return false,
         };
 
-        if self.turn != square.color {
-            return false;
-        }
+        // if self.turn != square.color {
+        //     return false;
+        // }
 
         match self.board.get_square(dst_x, dst_y) {
             Some(Piece { color, .. }) => {
