@@ -576,6 +576,10 @@ mod tests {
         );
         assert!(!game.safe_move(4, 7, 6, 7));
         assert!(!game.safe_move(4, 7, 2, 7));
+
+        let mut game = setup_board(&[(2, 2, White, King), (3, 4, Black, King)], White);
+        assert!(!game.safe_move(2, 2, 2, 3));
+        assert!(game.safe_move(2, 2, 1, 3));
     }
 
     #[test]
