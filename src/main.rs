@@ -54,13 +54,18 @@ pub fn move_from_index(idx: usize) -> Move {
 pub fn next_move(
     network: &mut ai::Network,
     game: &mut chess::Game,
-) -> Result<Move, rand::distr::weighted::Error> {
+) -> Result<Option<Move>, rand::distr::weighted::Error> {
+    if game.until_stalemate >= 50 {
+        return Ok(None);
+    }
+
     let encoded_board = encode_board(&game.board);
     ai::forward(network, &encoded_board);
 
     let idx = network.len() - 1;
     let logits = &mut network[idx].outputs;
 
+    let mut illegal_moves = 0;
     for (m, logit) in logits
         .iter_mut()
         .enumerate()
@@ -68,7 +73,12 @@ pub fn next_move(
     {
         if !game.safe_move(m.src.0, m.src.1, m.dst.0, m.dst.1) {
             *logit = -f64::INFINITY;
+            illegal_moves += 1;
         }
+    }
+
+    if illegal_moves == logits.len() {
+        return Ok(None);
     }
 
     ai::softmax(logits);
@@ -78,7 +88,7 @@ pub fn next_move(
     for v in dist.sample_iter(rng) {
         let m = move_from_index(v);
         if game.safe_move(m.src.0, m.src.1, m.dst.0, m.dst.1) {
-            return Ok(m);
+            return Ok(Some(m));
         }
     }
 
