@@ -95,10 +95,33 @@ pub fn next_move(
     panic!();
 }
 
-fn main() {
+pub fn game_loop(net_a: &mut ai::Network, net_b: &mut ai::Network) -> (f64, f64) {
+    let mut scores = (0.0, 0.0);
     let mut game = chess::Game::default();
-    let mut network = new_chess_network().unwrap();
+    while let Ok(Some(m)) = next_move(
+        if game.turn == chess::Color::White {
+            net_a
+        } else {
+            net_b
+        },
+        &mut game,
+    ) {
+        println!("{:?}", m);
+        game.do_move(m.src.0, m.src.1, m.dst.0, m.dst.1);
+    }
 
-    let next_move = next_move(&mut network, &mut game);
-    println!("{:?}", next_move);
+    if game.is_check(game.turn) {
+        println!("checkmate!");
+    } else {
+        println!("stalemate!");
+    }
+
+    scores
+}
+
+fn main() {
+    let mut a = new_chess_network().unwrap();
+    let mut b = new_chess_network().unwrap();
+
+    game_loop(&mut a, &mut b);
 }
