@@ -102,3 +102,11 @@ pub fn softmax(logits: &mut Vec<f64>) {
         *v /= sum_exp;
     }
 }
+
+pub fn forward(network: &mut Network, inputs: &Vec<f64>) {
+    let mut tmp = inputs;
+    for layer in network {
+        layer.forward(tmp);
+        tmp = &layer.outputs;
+    }
+}
