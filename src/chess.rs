@@ -325,8 +325,6 @@ impl Game {
             }
         };
 
-        println!("found da king");
-
         for x in 0..8 {
             for y in 0..8 {
                 let piece = match self.board.get_square(x, y) {
@@ -338,7 +336,6 @@ impl Game {
                     continue;
                 }
 
-                println!("can {} {} go to {} {}", x, y, king_x, king_y);
                 if self.legal_move(x, y, king_x, king_y) {
                     return true;
                 }
@@ -371,14 +368,7 @@ impl Game {
                 if self.is_check(src.color) {
                     is_check = true;
                     break;
-                } else {
-                    println!(
-                        "isn't in check, king at {} {}",
-                        (src_x as i8 + i * direction) as u8,
-                        src_y
-                    );
                 }
-
                 self.board
                     .set_square((src_x as i8 + i * direction) as u8, src_y, None);
             }
