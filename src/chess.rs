@@ -280,6 +280,10 @@ impl Game {
             None => return false,
         };
 
+        if self.turn != square.color {
+            return false;
+        }
+
         match self.board.get_square(dst_x, dst_y) {
             Some(Piece { color, .. }) => {
                 if square.color == color {
@@ -308,44 +312,45 @@ mod tests {
 
     #[test]
     fn pawn_move() {
-        let game = Game::default();
+        let mut game = Game::default();
+        game.turn = Black;
 
         assert!(game.legal_move(3, 6, 3, 4));
         assert!(!game.legal_move(3, 6, 3, 3));
 
-        let game = setup_board(&[(1, 1, White, Pawn)]);
+        let game = setup_board(&[(1, 1, White, Pawn)], White);
         assert!(!game.legal_move(1, 1, 2, 1));
         assert!(!game.legal_move(1, 1, 2, 2));
         assert!(!game.legal_move(1, 1, 0, 1));
 
-        let game = setup_board(&[(1, 2, White, Pawn)]);
+        let game = setup_board(&[(1, 2, White, Pawn)], White);
         assert!(!game.legal_move(1, 2, 1, 1));
 
-        let game = setup_board(&[(1, 2, White, Pawn)]);
+        let game = setup_board(&[(1, 2, White, Pawn)], White);
         assert!(!game.legal_move(1, 2, 1, 4));
 
-        let game = setup_board(&[(1, 6, Black, Pawn)]);
+        let game = setup_board(&[(1, 6, Black, Pawn)], Black);
         assert!(!game.legal_move(1, 6, 2, 5));
 
-        let game = setup_board(&[(1, 5, Black, Pawn)]);
+        let game = setup_board(&[(1, 5, Black, Pawn)], Black);
         assert!(!game.legal_move(1, 5, 1, 6));
 
-        let game = setup_board(&[(1, 1, White, Pawn), (2, 2, Black, Knight)]);
+        let game = setup_board(&[(1, 1, White, Pawn), (2, 2, Black, Knight)], White);
         assert!(game.legal_move(1, 1, 2, 2));
 
-        let game = setup_board(&[(1, 6, Black, Pawn), (2, 5, White, Bishop)]);
+        let game = setup_board(&[(1, 6, Black, Pawn), (2, 5, White, Bishop)], Black);
         assert!(game.legal_move(1, 6, 2, 5));
 
-        let game = setup_board(&[(1, 1, White, Pawn), (2, 2, White, Queen)]);
+        let game = setup_board(&[(1, 1, White, Pawn), (2, 2, White, Queen)], White);
         assert!(!game.legal_move(1, 1, 2, 2));
 
-        let game = setup_board(&[(1, 1, White, Pawn), (1, 2, Black, Pawn)]);
+        let game = setup_board(&[(1, 1, White, Pawn), (1, 2, Black, Pawn)], White);
         assert!(!game.legal_move(1, 1, 1, 2));
 
-        let game = setup_board(&[(1, 6, Black, Pawn), (2, 5, Black, Pawn)]);
+        let game = setup_board(&[(1, 6, Black, Pawn), (2, 5, Black, Pawn)], Black);
         assert!(!game.legal_move(1, 6, 2, 5));
 
-        let game = setup_board(&[(1, 1, White, Pawn), (1, 2, White, Knight)]);
+        let game = setup_board(&[(1, 1, White, Pawn), (1, 2, White, Knight)], White);
         assert!(!game.legal_move(1, 1, 1, 3));
     }
 
@@ -354,16 +359,16 @@ mod tests {
         let game = Game::default();
         assert!(!game.legal_move(1, 7, 2, 6));
 
-        let game = setup_board(&[(4, 5, White, Bishop)]);
+        let game = setup_board(&[(4, 5, White, Bishop)], White);
         assert!(game.legal_move(4, 5, 7, 2));
         assert!(game.legal_move(4, 5, 2, 3));
 
-        let game = setup_board(&[(1, 1, Black, Bishop), (3, 3, White, Knight)]);
+        let game = setup_board(&[(1, 1, Black, Bishop), (3, 3, White, Knight)], Black);
         assert!(game.legal_move(1, 1, 2, 2));
         assert!(game.legal_move(1, 1, 3, 3));
         assert!(!game.legal_move(1, 1, 4, 4));
 
-        let game = setup_board(&[(1, 1, Black, Bishop), (3, 3, Black, Knight)]);
+        let game = setup_board(&[(1, 1, Black, Bishop), (3, 3, Black, Knight)], Black);
         assert!(game.legal_move(1, 1, 2, 2));
         assert!(!game.legal_move(1, 1, 3, 3));
         assert!(!game.legal_move(1, 1, 4, 4));
@@ -371,20 +376,20 @@ mod tests {
 
     #[test]
     fn rook_move() {
-        let game = setup_board(&[(3, 2, White, Rook)]);
+        let game = setup_board(&[(3, 2, White, Rook)], White);
         assert!(game.legal_move(3, 2, 6, 2));
         assert!(game.legal_move(3, 2, 3, 4));
         assert!(game.legal_move(3, 2, 1, 2));
         assert!(game.legal_move(3, 2, 3, 1));
         assert!(!game.legal_move(3, 2, 1, 4));
 
-        let game = setup_board(&[(4, 3, Black, Rook), (6, 3, White, Rook)]);
+        let game = setup_board(&[(4, 3, Black, Rook), (6, 3, White, Rook)], Black);
         assert!(game.legal_move(4, 3, 2, 3));
         assert!(game.legal_move(4, 3, 5, 3));
         assert!(game.legal_move(4, 3, 6, 3));
         assert!(!game.legal_move(4, 3, 7, 3));
 
-        let game = setup_board(&[(4, 3, White, Rook), (6, 3, White, Rook)]);
+        let game = setup_board(&[(4, 3, White, Rook), (6, 3, White, Rook)], White);
         assert!(game.legal_move(4, 3, 2, 3));
         assert!(game.legal_move(4, 3, 5, 3));
         assert!(!game.legal_move(4, 3, 6, 3));
@@ -393,46 +398,49 @@ mod tests {
 
     #[test]
     fn king_move() {
-        let game = setup_board(&[(4, 7, Black, King)]);
+        let game = setup_board(&[(4, 7, Black, King)], Black);
         assert!(game.legal_move(4, 7, 5, 7));
         assert!(game.legal_move(4, 7, 5, 6));
         assert!(game.legal_move(4, 7, 3, 6));
         assert!(!game.legal_move(4, 7, 4, 5));
 
-        let game = setup_board(&[(4, 7, Black, King)]);
+        let game = setup_board(&[(4, 7, Black, King)], Black);
         assert!(!game.legal_move(4, 7, 6, 7));
         assert!(!game.legal_move(4, 7, 2, 7));
 
-        let game = setup_board(&[(4, 7, Black, King), (7, 7, White, Rook)]);
+        let game = setup_board(&[(4, 7, Black, King), (7, 7, White, Rook)], Black);
         assert!(!game.legal_move(4, 7, 6, 7));
         assert!(!game.legal_move(4, 7, 2, 7));
 
-        let game = setup_board(&[(4, 7, Black, King), (7, 7, Black, Rook)]);
+        let game = setup_board(&[(4, 7, Black, King), (7, 7, Black, Rook)], Black);
         assert!(game.legal_move(4, 7, 6, 7));
         assert!(!game.legal_move(4, 7, 2, 7));
 
-        let game = setup_board(&[(4, 7, Black, King), (0, 7, Black, Rook)]);
+        let game = setup_board(&[(4, 7, Black, King), (0, 7, Black, Rook)], Black);
         assert!(!game.legal_move(4, 7, 6, 7));
         assert!(game.legal_move(4, 7, 2, 7));
     }
 
     #[test]
     fn knight_move() {
-        let game = setup_board(&[(2, 5, White, Knight)]);
+        let game = setup_board(&[(2, 5, White, Knight)], White);
         assert!(game.legal_move(2, 5, 1, 7));
         assert!(game.legal_move(2, 5, 1, 3));
         assert!(!game.legal_move(2, 5, 2, 2));
 
-        let game = setup_board(&[
-            (5, 5, White, Knight),
-            (4, 3, White, Pawn),
-            (6, 3, Black, Queen),
-        ]);
+        let game = setup_board(
+            &[
+                (5, 5, White, Knight),
+                (4, 3, White, Pawn),
+                (6, 3, Black, Queen),
+            ],
+            White,
+        );
         assert!(!game.legal_move(5, 5, 4, 3));
         assert!(game.legal_move(5, 5, 6, 3));
     }
 
-    fn setup_board(pieces: &[(u8, u8, Color, PieceType)]) -> Game {
+    fn setup_board(pieces: &[(u8, u8, Color, PieceType)], turn: Color) -> Game {
         let mut board = Board::new();
         for &(x, y, color, piece_type) in pieces {
             board.set_square(x, y, Some(Piece { color, piece_type }));
@@ -440,6 +448,7 @@ mod tests {
 
         Game {
             board,
+            turn,
             ..Default::default()
         }
     }
