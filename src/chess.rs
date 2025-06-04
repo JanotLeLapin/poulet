@@ -37,6 +37,8 @@ impl Piece {
 
 pub type Square = Option<Piece>;
 
+pub type Position = (u8, u8);
+
 #[derive(Clone, Debug)]
 pub struct Board(pub [Square; 64]);
 
@@ -302,6 +304,100 @@ impl Game {
             PieceType::Knight => self.knight_legal_move(src_x, src_y, dst_x, dst_y),
         }
     }
+
+    pub fn find_king(&self, color: Color) -> Option<Position> {
+        for x in 0..8 {
+            for y in 0..8 {
+                if Some(Piece::new(color, PieceType::King)) == self.board.get_square(x, y) {
+                    return Some((x, y));
+                }
+            }
+        }
+
+        None
+    }
+
+    pub fn is_check(&self, color: Color) -> bool {
+        let (king_x, king_y) = match self.find_king(color) {
+            Some(v) => v,
+            None => {
+                return false;
+            }
+        };
+
+        println!("found da king");
+
+        for x in 0..8 {
+            for y in 0..8 {
+                let piece = match self.board.get_square(x, y) {
+                    Some(v) => v,
+                    None => continue,
+                };
+
+                if piece.color == color {
+                    continue;
+                }
+
+                println!("can {} {} go to {} {}", x, y, king_x, king_y);
+                if self.legal_move(x, y, king_x, king_y) {
+                    return true;
+                }
+            }
+        }
+
+        false
+    }
+
+    pub fn safe_move(&mut self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
+        if !self.legal_move(src_x, src_y, dst_x, dst_y) {
+            return false;
+        }
+
+        let src = match self.board.get_square(src_x, src_y) {
+            Some(v) => v,
+            None => return false,
+        };
+        let dst = self.board.get_square(dst_x, dst_y);
+
+        if PieceType::King == src.piece_type && src_x.abs_diff(dst_x) == 2 {
+            let (direction, until) = if dst_x < src_x { (-1, 3) } else { (1, 2) };
+
+            let mut is_check = false;
+
+            for i in 0..until + 2 {
+                self.board
+                    .set_square((src_x as i8 + i * direction) as u8, src_y, Some(src));
+
+                if self.is_check(src.color) {
+                    is_check = true;
+                    break;
+                } else {
+                    println!(
+                        "isn't in check, king at {} {}",
+                        (src_x as i8 + i * direction) as u8,
+                        src_y
+                    );
+                }
+
+                self.board
+                    .set_square((src_x as i8 + i * direction) as u8, src_y, None);
+            }
+
+            self.board.set_square(src_x, src_y, Some(src));
+
+            !is_check
+        } else {
+            self.board.set_square(dst_x, dst_y, Some(src));
+            self.board.set_square(src_x, src_y, None);
+
+            let is_check = self.is_check(src.color);
+
+            self.board.set_square(src_x, src_y, Some(src));
+            self.board.set_square(dst_x, dst_y, dst);
+
+            !is_check
+        }
+    }
 }
 
 #[cfg(test)]
@@ -419,6 +515,67 @@ mod tests {
         let game = setup_board(&[(4, 7, Black, King), (0, 7, Black, Rook)], Black);
         assert!(!game.legal_move(4, 7, 6, 7));
         assert!(game.legal_move(4, 7, 2, 7));
+
+        let mut game = setup_board(
+            &[
+                (4, 7, Black, King),
+                (0, 7, Black, Rook),
+                (7, 7, Black, Rook),
+                (4, 5, White, Rook),
+            ],
+            Black,
+        );
+        assert!(!game.safe_move(4, 7, 6, 7));
+        assert!(!game.safe_move(4, 7, 2, 7));
+
+        let mut game = setup_board(
+            &[
+                (4, 7, Black, King),
+                (0, 7, Black, Rook),
+                (7, 7, Black, Rook),
+                (3, 5, White, Rook),
+            ],
+            Black,
+        );
+        assert!(game.safe_move(4, 7, 6, 7));
+        assert!(!game.safe_move(4, 7, 2, 7));
+
+        let mut game = setup_board(
+            &[
+                (4, 7, Black, King),
+                (0, 7, Black, Rook),
+                (7, 7, Black, Rook),
+                (0, 5, White, Rook),
+            ],
+            Black,
+        );
+        assert!(game.safe_move(4, 7, 6, 7));
+        assert!(!game.safe_move(4, 7, 2, 7));
+
+        let mut game = setup_board(
+            &[
+                (4, 7, Black, King),
+                (0, 7, Black, Rook),
+                (7, 7, Black, Rook),
+                (7, 5, White, Rook),
+            ],
+            Black,
+        );
+        assert!(!game.safe_move(4, 7, 6, 7));
+        assert!(game.safe_move(4, 7, 2, 7));
+
+        let mut game = setup_board(
+            &[
+                (4, 7, Black, King),
+                (0, 7, Black, Rook),
+                (7, 7, Black, Rook),
+                (6, 5, White, Rook),
+                (3, 5, White, Rook),
+            ],
+            Black,
+        );
+        assert!(!game.safe_move(4, 7, 6, 7));
+        assert!(!game.safe_move(4, 7, 2, 7));
     }
 
     #[test]
