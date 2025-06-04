@@ -203,6 +203,11 @@ impl Game {
         true
     }
 
+    pub fn legal_queen(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
+        self.bishop_legal_move(src_x, src_y, dst_x, dst_y)
+            || self.rook_legal_move(src_x, src_y, dst_x, dst_y)
+    }
+
     pub fn legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
         if src_x >= 8 || src_y >= 8 || dst_x >= 8 || dst_y >= 8 {
             return false;
@@ -230,6 +235,7 @@ impl Game {
             PieceType::Pawn => self.pawn_legal_move(src_x, src_y, dst_x, dst_y),
             PieceType::Bishop => self.bishop_legal_move(src_x, src_y, dst_x, dst_y),
             PieceType::Rook => self.rook_legal_move(src_x, src_y, dst_x, dst_y),
+            PieceType::Queen => self.legal_queen(src_x, src_y, dst_x, dst_y),
             _ => false,
         }
     }
