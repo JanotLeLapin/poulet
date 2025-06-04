@@ -170,6 +170,39 @@ impl Game {
         true
     }
 
+    pub fn rook_legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
+        let dist_x = src_x.abs_diff(dst_x);
+        let dist_y = src_y.abs_diff(dst_y);
+        let dist = dist_x + dist_y;
+
+        if (dist_x != 0 || dist_y != dist) && (dist_y != 0 || dist_x != dist) {
+            return false;
+        }
+
+        let xstep: i8 = if dist_x == 0 {
+            0
+        } else {
+            if dst_x < src_x { -1 } else { 1 }
+        };
+        let ystep: i8 = if dist_y == 0 {
+            0
+        } else {
+            if dst_y < src_y { -1 } else { 1 }
+        };
+
+        for i in 1..dist {
+            match self.board.get_square(
+                (src_x as i8 + (xstep * i as i8)) as u8,
+                (src_y as i8 + (ystep * i as i8)) as u8,
+            ) {
+                Some(_) => return false,
+                None => continue,
+            }
+        }
+
+        true
+    }
+
     pub fn legal_move(&self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) -> bool {
         if src_x >= 8 || src_y >= 8 || dst_x >= 8 || dst_y >= 8 {
             return false;
@@ -196,6 +229,7 @@ impl Game {
         match square.piece_type {
             PieceType::Pawn => self.pawn_legal_move(src_x, src_y, dst_x, dst_y),
             PieceType::Bishop => self.bishop_legal_move(src_x, src_y, dst_x, dst_y),
+            PieceType::Rook => self.rook_legal_move(src_x, src_y, dst_x, dst_y),
             _ => false,
         }
     }
@@ -268,6 +302,28 @@ mod tests {
         assert!(game.legal_move(1, 1, 2, 2));
         assert!(!game.legal_move(1, 1, 3, 3));
         assert!(!game.legal_move(1, 1, 4, 4));
+    }
+
+    #[test]
+    fn rook_move() {
+        let game = setup_board(&[(3, 2, White, Rook)]);
+        assert!(game.legal_move(3, 2, 6, 2));
+        assert!(game.legal_move(3, 2, 3, 4));
+        assert!(game.legal_move(3, 2, 1, 2));
+        assert!(game.legal_move(3, 2, 3, 1));
+        assert!(!game.legal_move(3, 2, 1, 4));
+
+        let game = setup_board(&[(4, 3, Black, Rook), (6, 3, White, Rook)]);
+        assert!(game.legal_move(4, 3, 2, 3));
+        assert!(game.legal_move(4, 3, 5, 3));
+        assert!(game.legal_move(4, 3, 6, 3));
+        assert!(!game.legal_move(4, 3, 7, 3));
+
+        let game = setup_board(&[(4, 3, White, Rook), (6, 3, White, Rook)]);
+        assert!(game.legal_move(4, 3, 2, 3));
+        assert!(game.legal_move(4, 3, 5, 3));
+        assert!(!game.legal_move(4, 3, 6, 3));
+        assert!(!game.legal_move(4, 3, 7, 3));
     }
 
     fn setup_board(pieces: &[(u8, u8, Color, PieceType)]) -> Game {
