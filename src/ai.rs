@@ -98,11 +98,13 @@ impl Layer {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Network(pub Vec<Layer>);
 
+#[derive(Debug)]
 pub enum NetworkSaveError {
     EncodeError(rmp_serde::encode::Error),
     IOError(std::io::Error),
 }
 
+#[derive(Debug)]
 pub enum NetworkLoadError {
     DecodeError(rmp_serde::decode::Error),
     IOError(std::io::Error),

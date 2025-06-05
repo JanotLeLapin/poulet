@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 
 use rand::{Rng, seq::SliceRandom};
+use rand_distr::Distribution;
 use rayon::prelude::*;
 
 static HEAT_MAP: [[u8; 8]; 8] = [
@@ -114,20 +115,33 @@ fn get_elites(scores: &Vec<f64>, n: usize) -> Vec<usize> {
 }
 
 fn make_generation(
-    elite: &Option<Vec<poulet::ai::Network>>,
+    elite: Option<Vec<poulet::ai::Network>>,
     count: usize,
 ) -> Vec<poulet::ai::Network> {
     if let Some(elite) = elite {
-        let rng_a = rand::rng();
-        let iter_a = rng_a.sample_iter(rand::distr::Uniform::new(0, elite.len()).unwrap());
-        let rng_b = rand::rng();
-        let iter_b = rng_b.sample_iter(rand::distr::Uniform::new(0, elite.len()).unwrap());
+        let elite_count = elite.len();
 
-        let pair_iter = iter_a.zip(iter_b).filter(|(i, j)| i != j);
-        pair_iter
-            .map(|(i, j)| elite[i].offspring(&elite[j]).unwrap())
-            .take(count)
-            .collect()
+        let mut res = Vec::with_capacity(count);
+        let num_offspring = count - elite_count;
+
+        let mut rng = rand::rng();
+        let dist = rand::distr::Uniform::new(0, elite.len()).unwrap();
+
+        for _ in 0..num_offspring {
+            let parent_a = dist.sample(&mut rng);
+            let parent_b = loop {
+                let candidate = dist.sample(&mut rng);
+                if candidate != parent_a {
+                    break candidate;
+                }
+            };
+
+            res.push(elite[parent_a].offspring(&elite[parent_b]).unwrap());
+        }
+
+        res.extend(elite);
+
+        res
     } else {
         vec![0; count]
             .iter()
@@ -140,11 +154,10 @@ fn main() {
     let mut elite = None;
 
     for i in 0..10 {
-        println!("making generation {}", i);
-        let mut networks: Vec<_> = make_generation(&elite, 64)
         let generation = i + 1;
 
         println!("making generation {}", generation);
+        let mut networks: Vec<_> = make_generation(elite, 64)
             .into_iter()
             .map(|net| Arc::new(Mutex::new(net)))
             .collect();
