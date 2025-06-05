@@ -157,9 +157,9 @@ fn main() {
         let generation = i + 1;
 
         println!("making generation {}", generation);
-        let networks: Vec<_> = make_generation(elite, 64).into_iter().collect();
+        let networks: Vec<_> = make_generation(elite, 256).into_iter().collect();
         println!("making matches");
-        let matches = make_matches(networks.len(), 4);
+        let matches = make_matches(networks.len(), 16);
 
         let start = std::time::Instant::now();
         let scores = run_matches(&networks, &matches);
