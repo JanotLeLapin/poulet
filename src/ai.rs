@@ -126,7 +126,10 @@ impl Network {
 }
 
 pub fn softmax(logits: &mut Vec<f64>) {
-    let max = match logits.iter().max_by(|a, b| a.partial_cmp(b).unwrap()) {
+    let max = match logits
+        .iter()
+        .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+    {
         Some(v) => *v,
         None => return,
     };

@@ -109,7 +109,7 @@ fn run_matches(
 
 fn get_elites(scores: &Vec<f64>, n: usize) -> Vec<usize> {
     let mut indexed: Vec<_> = scores.iter().enumerate().collect();
-    indexed.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
+    indexed.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap_or(std::cmp::Ordering::Equal));
     indexed.into_iter().take(n).map(|(i, _)| i).collect()
 }
 
