@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 
+use rand::seq::SliceRandom;
 use rayon::prelude::*;
 
 static HEAT_MAP: [[u8; 8]; 8] = [
@@ -60,6 +61,28 @@ fn game_loop(net_a: &mut poulet::ai::Network, net_b: &mut poulet::ai::Network) -
     (scores[0], scores[1])
 }
 
+fn make_matches(network_count: usize, max_matches: usize) -> Vec<(usize, usize)> {
+    let mut rng = rand::rng();
+    let mut matches = Vec::with_capacity(max_matches);
+    let mut match_count = vec![0; network_count];
+
+    let mut all_pairs: Vec<_> = (0..network_count)
+        .flat_map(|i| (0..network_count).map(move |j| (i, j)))
+        .collect();
+
+    all_pairs.shuffle(&mut rng);
+
+    for (i, j) in all_pairs {
+        if match_count[i] < max_matches && match_count[j] < max_matches && i != j {
+            matches.push((i, j));
+            match_count[i] += 1;
+            match_count[j] += 1;
+        }
+    }
+
+    matches
+}
+
 fn run_matches(
     networks: &mut [Arc<Mutex<poulet::ai::Network>>],
     matches: &[(usize, usize)],
@@ -85,15 +108,11 @@ fn run_matches(
 }
 
 fn main() {
-    let mut networks: Vec<_> = [
-        poulet::new_chess_network().unwrap(),
-        poulet::new_chess_network().unwrap(),
-        poulet::new_chess_network().unwrap(),
-    ]
-    .into_iter()
-    .map(|net| Arc::new(Mutex::new(net)))
-    .collect();
-    let matches = [(0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1)];
+    let mut networks: Vec<_> = (0..64)
+        .into_iter()
+        .map(|_| Arc::new(Mutex::new(poulet::new_chess_network().unwrap())))
+        .collect();
+    let matches = make_matches(networks.len(), 4);
 
     let start = std::time::Instant::now();
     let scores = run_matches(&mut networks, &matches);
