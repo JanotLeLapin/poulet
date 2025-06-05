@@ -469,6 +469,10 @@ impl Game {
             self.until_stalemate += 1;
         }
 
+        if self.board.get_square(dst_x, dst_y).is_some() {
+            self.until_stalemate = 0;
+        }
+
         if PieceType::King == src.piece_type && src_x.abs_diff(dst_x) == 2 {
             self.board.set_square(src_x, src_y, None);
             self.board.set_square(dst_x, dst_y, Some(src));
