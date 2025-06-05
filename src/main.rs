@@ -64,7 +64,7 @@ fn run_matches(
     matches: &[(usize, usize)],
 ) -> Vec<f64> {
     let results: Vec<Mutex<f64>> = (0..networks.len()).map(|_| Mutex::new(0.0)).collect();
-    matches.iter().for_each(|&(i, j)| {
+    matches.par_iter().for_each(|&(i, j)| {
         if i == j || i >= networks.len() || j >= networks.len() {
             return;
         }
