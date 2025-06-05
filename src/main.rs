@@ -107,6 +107,12 @@ fn run_matches(
         .collect()
 }
 
+fn get_elites(scores: &Vec<f64>, n: usize) -> Vec<usize> {
+    let mut indexed: Vec<_> = scores.iter().enumerate().collect();
+    indexed.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
+    indexed.into_iter().take(n).map(|(i, _)| i).collect()
+}
+
 fn main() {
     let mut networks: Vec<_> = (0..64)
         .into_iter()
@@ -117,6 +123,9 @@ fn main() {
     let start = std::time::Instant::now();
     let scores = run_matches(&mut networks, &matches);
     let duration = start.elapsed();
+
+    let elite = get_elites(&scores, 8);
+    println!("{:?}", elite);
 
     println!("{:?}, took {:?}", scores, duration);
 }
