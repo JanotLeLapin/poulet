@@ -1,8 +1,21 @@
 use std::sync::{Arc, Mutex};
 
+use clap::Parser;
+
 use rand::{Rng, seq::SliceRandom};
 use rand_distr::Distribution;
 use rayon::prelude::*;
+
+#[derive(Parser, Debug)]
+struct Args {
+    /// generation to start from
+    #[arg(short, long)]
+    start_gen: usize,
+
+    /// generation to stop
+    #[arg(short, long)]
+    end_gen: usize,
+}
 
 static HEAT_MAP: [[u8; 8]; 8] = [
     [0, 0, 1, 2, 2, 1, 0, 0],
@@ -151,9 +164,19 @@ fn make_generation(
 }
 
 fn main() {
-    let mut elite = None;
+    let args = Args::parse();
 
-    for i in 0..10 {
+    let mut elite = match args.start_gen {
+        0 => None,
+        n => Some(
+            (0..8)
+                .map(|i| format!("models/gen-{}-net-{}.model", n, i))
+                .map(|filename| poulet::ai::Network::load(&filename).unwrap())
+                .collect(),
+        ),
+    };
+
+    for i in args.start_gen..args.end_gen {
         let generation = i + 1;
 
         println!("making generation {}", generation);
