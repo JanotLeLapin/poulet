@@ -1,3 +1,7 @@
+use std::sync::{Arc, Mutex};
+
+use rayon::prelude::*;
+
 static HEAT_MAP: [[u8; 8]; 8] = [
     [0, 0, 1, 2, 2, 1, 0, 0],
     [0, 1, 2, 3, 3, 2, 1, 0],
@@ -55,38 +59,44 @@ fn game_loop(net_a: &mut poulet::ai::Network, net_b: &mut poulet::ai::Network) -
     (scores[0], scores[1])
 }
 
-fn run_matches(networks: &mut [poulet::ai::Network], matches: &[(usize, usize)]) -> Vec<f64> {
-    let mut results = vec![0.0; networks.len()];
-    for &(i, j) in matches {
+fn run_matches(
+    networks: &mut [Arc<Mutex<poulet::ai::Network>>],
+    matches: &[(usize, usize)],
+) -> Vec<f64> {
+    let results: Vec<Mutex<f64>> = (0..networks.len()).map(|_| Mutex::new(0.0)).collect();
+    matches.iter().for_each(|&(i, j)| {
         if i == j || i >= networks.len() || j >= networks.len() {
-            continue;
+            return;
         }
 
-        let net_a: &mut poulet::ai::Network;
-        let net_b: &mut poulet::ai::Network;
-        if i < j {
-            let (left, right) = networks.split_at_mut(j);
-            net_a = &mut left[i];
-            net_b = &mut right[0];
-        } else {
-            let (left, right) = networks.split_at_mut(i);
-            net_a = &mut right[0];
-            net_b = &mut left[j];
-        }
-        let (score_a, score_b) = game_loop(net_a, net_b);
-        results[i] += score_a;
-        results[j] += score_b;
-    }
+        let (first, second) = if i < j { (i, j) } else { (j, i) };
+        let mut net_a = networks[first].lock().unwrap();
+        let mut net_b = networks[second].lock().unwrap();
+        let (score_a, score_b) = game_loop(&mut *net_a, &mut *net_b);
+        *results[i].lock().unwrap() += score_a;
+        *results[j].lock().unwrap() += score_b;
+    });
+
     results
+        .into_iter()
+        .map(|m| m.into_inner().unwrap())
+        .collect()
 }
 
 fn main() {
-    let mut networks = [
+    let mut networks: Vec<_> = [
         poulet::new_chess_network().unwrap(),
         poulet::new_chess_network().unwrap(),
         poulet::new_chess_network().unwrap(),
-    ];
+    ]
+    .into_iter()
+    .map(|net| Arc::new(Mutex::new(net)))
+    .collect();
     let matches = [(0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1)];
 
-    println!("{:?}", run_matches(&mut networks, &matches));
+    let start = std::time::Instant::now();
+    let scores = run_matches(&mut networks, &matches);
+    let duration = start.elapsed();
+
+    println!("{:?}, took {:?}", scores, duration);
 }
