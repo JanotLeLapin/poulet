@@ -46,7 +46,7 @@ fn move_from_index(idx: usize) -> chess::Move {
 }
 
 pub fn next_move(
-    network: &mut ai::Network,
+    network: &ai::Network,
     game: &mut chess::Game,
     buffer: (&mut Vec<f64>, &mut Vec<f64>),
 ) -> Result<Option<chess::Move>, rand::distr::weighted::Error> {

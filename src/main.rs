@@ -15,7 +15,7 @@ static HEAT_MAP: [[u8; 8]; 8] = [
     [0, 0, 1, 2, 2, 1, 0, 0],
 ];
 
-fn game_loop(net_a: &mut poulet::ai::Network, net_b: &mut poulet::ai::Network) -> (f64, f64) {
+fn game_loop(net_a: &poulet::ai::Network, net_b: &poulet::ai::Network) -> (f64, f64) {
     let buffer = net_a.get_buffer();
     let (mut buf_in, mut buf_out) = buffer;
 
@@ -24,7 +24,7 @@ fn game_loop(net_a: &mut poulet::ai::Network, net_b: &mut poulet::ai::Network) -
     let mut game = poulet::chess::Game::default();
     let mut turn = 0;
     loop {
-        let net = &mut *networks[turn];
+        let net = &*networks[turn];
         let m = match poulet::next_move(net, &mut game, (&mut buf_in, &mut buf_out)) {
             Ok(Some(v)) => v,
             _ => break,
@@ -87,10 +87,7 @@ fn make_matches(network_count: usize, max_matches: usize) -> Vec<(usize, usize)>
     matches
 }
 
-fn run_matches(
-    networks: &mut [Arc<Mutex<poulet::ai::Network>>],
-    matches: &[(usize, usize)],
-) -> Vec<f64> {
+fn run_matches(networks: &[poulet::ai::Network], matches: &[(usize, usize)]) -> Vec<f64> {
     let results: Vec<Mutex<f64>> = (0..networks.len()).map(|_| Mutex::new(0.0)).collect();
     matches.par_iter().for_each(|&(i, j)| {
         if i == j || i >= networks.len() || j >= networks.len() {
@@ -98,9 +95,9 @@ fn run_matches(
         }
 
         let (first, second) = if i < j { (i, j) } else { (j, i) };
-        let mut net_a = networks[first].lock().unwrap();
-        let mut net_b = networks[second].lock().unwrap();
-        let (score_a, score_b) = game_loop(&mut *net_a, &mut *net_b);
+        let net_a = &networks[first];
+        let net_b = &networks[second];
+        let (score_a, score_b) = game_loop(net_a, net_b);
         *results[i].lock().unwrap() += score_a;
         *results[j].lock().unwrap() += score_b;
     });
@@ -160,41 +157,36 @@ fn main() {
         let generation = i + 1;
 
         println!("making generation {}", generation);
-        let mut networks: Vec<_> = make_generation(elite, 64)
-            .into_iter()
-            .map(|net| Arc::new(Mutex::new(net)))
-            .collect();
+        let networks: Vec<_> = make_generation(elite, 64).into_iter().collect();
         println!("making matches");
         let matches = make_matches(networks.len(), 4);
 
         let start = std::time::Instant::now();
-        let scores = run_matches(&mut networks, &matches);
+        let scores = run_matches(&networks, &matches);
         let duration = start.elapsed();
         println!("{:?}, took {:?}", scores, duration);
 
         let elite_indices = get_elites(&scores, 8);
-        let elite_arcs: Vec<_> = elite_indices.iter().map(|i| networks[*i].clone()).collect();
-
-        drop(networks);
-
-        let elite_networks: Vec<_> = elite_arcs
+        let current_elite: Vec<_> = networks
             .into_iter()
-            .map(|arc| {
-                Arc::try_unwrap(arc)
-                    .expect("could not unwrap arc")
-                    .into_inner()
-                    .expect("mutex poisoned")
+            .enumerate()
+            .filter_map(|(i, net)| {
+                if elite_indices.contains(&i) {
+                    Some(net)
+                } else {
+                    None
+                }
             })
             .collect();
 
         if generation % 5 == 0 {
             println!("saving elite");
-            for (i, net) in elite_networks.iter().enumerate() {
+            for (i, net) in current_elite.iter().enumerate() {
                 net.save(&format!("models/gen-{}-net-{}.model", generation, i))
                     .unwrap();
             }
         }
 
-        elite = Some(elite_networks)
+        elite = Some(current_elite);
     }
 }

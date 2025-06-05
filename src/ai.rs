@@ -148,7 +148,7 @@ impl Network {
         )
     }
 
-    pub fn forward(&mut self, inputs: &Vec<f64>, layer: (&mut Vec<f64>, &mut Vec<f64>)) {
+    pub fn forward(&self, inputs: &Vec<f64>, layer: (&mut Vec<f64>, &mut Vec<f64>)) {
         let (input, output) = layer;
 
         input.extend_from_slice(inputs);
