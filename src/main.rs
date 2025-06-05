@@ -16,13 +16,16 @@ static HEAT_MAP: [[u8; 8]; 8] = [
 ];
 
 fn game_loop(net_a: &mut poulet::ai::Network, net_b: &mut poulet::ai::Network) -> (f64, f64) {
+    let buffer = net_a.get_buffer();
+    let (mut buf_in, mut buf_out) = buffer;
+
     let networks = [net_a, net_b];
     let mut scores = [0.0, 0.0];
     let mut game = poulet::chess::Game::default();
     let mut turn = 0;
     loop {
         let net = &mut *networks[turn];
-        let m = match poulet::next_move(net, &mut game) {
+        let m = match poulet::next_move(net, &mut game, (&mut buf_in, &mut buf_out)) {
             Ok(Some(v)) => v,
             _ => break,
         };

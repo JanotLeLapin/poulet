@@ -20,7 +20,6 @@ pub struct Layer {
     pub output_size: u64,
     pub weights: Vec<f64>,
     pub biases: Vec<f64>,
-    pub outputs: Vec<f64>,
     pub activation: Activation,
 }
 
@@ -31,7 +30,6 @@ impl Layer {
             output_size,
             weights: vec![1.0; (input_size * output_size) as usize],
             biases: vec![0.0; output_size as usize],
-            outputs: vec![0.0; output_size as usize],
             activation,
         }
     }
@@ -65,8 +63,8 @@ impl Layer {
         Ok(child)
     }
 
-    pub fn forward(&mut self, inputs: &Vec<f64>) {
-        for (i, output) in self.outputs.iter_mut().enumerate() {
+    pub fn forward(&self, inputs: &Vec<f64>, outputs: &mut Vec<f64>) {
+        for (i, output) in outputs.iter_mut().enumerate() {
             let start = i * self.input_size as usize;
             let end = start + self.input_size as usize;
 
@@ -82,14 +80,14 @@ impl Layer {
         match self.activation {
             Activation::None => {}
             Activation::Relu => {
-                self.outputs.iter_mut().for_each(|o| {
+                outputs.iter_mut().for_each(|o| {
                     if *o < 0.0 {
                         *o = 0.0;
                     }
                 });
             }
             Activation::Softmax { temperature } => {
-                softmax(&mut self.outputs);
+                softmax(outputs);
             }
         }
     }
@@ -136,11 +134,29 @@ impl Network {
         Ok(Self(res))
     }
 
-    pub fn forward(&mut self, inputs: &Vec<f64>) {
-        let mut tmp = inputs;
-        for layer in &mut self.0 {
-            layer.forward(tmp);
-            tmp = &layer.outputs;
+    pub fn get_buffer(&self) -> (Vec<f64>, Vec<f64>) {
+        let max_output_size = self
+            .0
+            .iter()
+            .map(|layer| layer.output_size as usize)
+            .max()
+            .unwrap_or(0);
+
+        (
+            Vec::with_capacity(max_output_size),
+            Vec::with_capacity(max_output_size),
+        )
+    }
+
+    pub fn forward(&mut self, inputs: &Vec<f64>, layer: (&mut Vec<f64>, &mut Vec<f64>)) {
+        let (input, output) = layer;
+
+        input.extend_from_slice(inputs);
+
+        for layer in &self.0 {
+            output.resize(layer.output_size as usize, 0.0);
+            layer.forward(input, output);
+            std::mem::swap(input, output);
         }
     }
 }
