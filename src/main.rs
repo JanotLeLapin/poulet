@@ -58,7 +58,7 @@ fn game_loop(net_a: &mut poulet::ai::Network, net_b: &mut poulet::ai::Network) -
 fn run_matches(networks: &mut [poulet::ai::Network], matches: &[(usize, usize)]) -> Vec<f64> {
     let mut results = vec![0.0; networks.len()];
     for &(i, j) in matches {
-        if i == j {
+        if i == j || i >= networks.len() || j >= networks.len() {
             continue;
         }
 
