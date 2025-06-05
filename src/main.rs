@@ -55,11 +55,38 @@ fn game_loop(net_a: &mut poulet::ai::Network, net_b: &mut poulet::ai::Network) -
     (scores[0], scores[1])
 }
 
+fn run_matches(networks: &mut [poulet::ai::Network], matches: &[(usize, usize)]) -> Vec<f64> {
+    let mut results = vec![0.0; networks.len()];
+    for &(i, j) in matches {
+        if i == j {
+            continue;
+        }
+
+        let net_a: &mut poulet::ai::Network;
+        let net_b: &mut poulet::ai::Network;
+        if i < j {
+            let (left, right) = networks.split_at_mut(j);
+            net_a = &mut left[i];
+            net_b = &mut right[0];
+        } else {
+            let (left, right) = networks.split_at_mut(i);
+            net_a = &mut right[0];
+            net_b = &mut left[j];
+        }
+        let (score_a, score_b) = game_loop(net_a, net_b);
+        results[i] += score_a;
+        results[j] += score_b;
+    }
+    results
+}
+
 fn main() {
-    let mut a = poulet::new_chess_network().unwrap();
-    let mut b = poulet::new_chess_network().unwrap();
+    let mut networks = [
+        poulet::new_chess_network().unwrap(),
+        poulet::new_chess_network().unwrap(),
+        poulet::new_chess_network().unwrap(),
+    ];
+    let matches = [(0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1)];
 
-    let scores = game_loop(&mut a, &mut b);
-
-    println!("final scores: {:?}", scores);
+    println!("{:?}", run_matches(&mut networks, &matches));
 }
