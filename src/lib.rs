@@ -7,7 +7,7 @@ pub fn new_chess_network() -> Result<ai::Network, rand_distr::NormalError> {
     let mut layers = vec![
         ai::Layer::new(768, 512, ai::Activation::Relu),
         ai::Layer::new(512, 1024, ai::Activation::Relu),
-        ai::Layer::new(1024, 4096, ai::Activation::Softmax { temperature: 0.6 }),
+        ai::Layer::new(1024, 4096, ai::Activation::None),
     ];
 
     layers[0].randomize(ai::WeightInit::He)?;
