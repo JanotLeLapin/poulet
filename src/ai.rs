@@ -1,7 +1,8 @@
+use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Copy)]
 pub enum Activation {
     None,
     Relu,
@@ -55,6 +56,13 @@ impl Layer {
         }
 
         Ok(())
+    }
+
+    pub fn offspring(&self, other: &Self) -> Result<Self, OffspringError> {
+        let mut child = Self::new(self.input_size, self.output_size, self.activation);
+        offspring(&self.weights, &other.weights, &mut child.weights)?;
+        offspring(&self.biases, &self.biases, &mut child.biases)?;
+        Ok(child)
     }
 
     pub fn forward(&mut self, inputs: &Vec<f64>) {
@@ -116,6 +124,16 @@ impl Network {
         .map_err(|err| NetworkSaveError::IOError(err))
     }
 
+    pub fn offspring(&self, other: &Self) -> Result<Self, OffspringError> {
+        let mut res = Vec::with_capacity(self.0.len());
+
+        for (a, b) in self.0.iter().zip(&other.0) {
+            res.push(a.offspring(b)?);
+        }
+
+        Ok(Self(res))
+    }
+
     pub fn forward(&mut self, inputs: &Vec<f64>) {
         let mut tmp = inputs;
         for layer in &mut self.0 {
@@ -143,4 +161,56 @@ pub fn softmax(logits: &mut Vec<f64>) {
     for v in logits.iter_mut() {
         *v /= sum_exp;
     }
+}
+
+pub enum OffspringError {
+    UniformError(rand::distr::uniform::Error),
+    WeightedIndexError(rand::distr::weighted::Error),
+    NormalError(rand_distr::NormalError),
+}
+
+pub fn offspring(a: &Vec<f64>, b: &Vec<f64>, dst: &mut Vec<f64>) -> Result<(), OffspringError> {
+    let crossover_rng = rand::rng();
+    let crossover = crossover_rng.sample_iter(
+        rand::distr::Uniform::new(0.0, 1.0).map_err(|err| OffspringError::UniformError(err))?,
+    );
+
+    let mutation_rng = rand::rng();
+    let mutation = mutation_rng.sample_iter(
+        rand::distr::weighted::WeightedIndex::new([0.8, 0.15, 0.05])
+            .map_err(|err| OffspringError::WeightedIndexError(err))?,
+    );
+
+    let smooth_mutation_rng = rand::rng();
+    let smooth_mutation = smooth_mutation_rng.sample_iter(
+        rand_distr::Normal::new(0.0, 0.02).map_err(|err| OffspringError::NormalError(err))?,
+    );
+
+    let burst_mutation_rng = rand::rng();
+    let burst_mutation = burst_mutation_rng.sample_iter(
+        rand_distr::Normal::new(0.0, 0.2).map_err(|err| OffspringError::NormalError(err))?,
+    );
+
+    for ((((((v, av), bv), alpha), mutation_type), smooth), burst) in dst
+        .iter_mut()
+        .zip(a)
+        .zip(b)
+        .zip(crossover)
+        .zip(mutation)
+        .zip(smooth_mutation)
+        .zip(burst_mutation)
+    {
+        *v = av * alpha + bv * (1.0 - alpha);
+        match mutation_type {
+            1 => {
+                *v += smooth;
+            }
+            2 => {
+                *v += burst;
+            }
+            _ => {}
+        }
+    }
+
+    Ok(())
 }
