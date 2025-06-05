@@ -52,6 +52,12 @@ pub type Square = Option<Piece>;
 
 pub type Position = (u8, u8);
 
+#[derive(Debug)]
+pub struct Move {
+    pub src: Position,
+    pub dst: Position,
+}
+
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Board(pub [Square; 64]);
 

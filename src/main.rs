@@ -3,12 +3,6 @@ mod chess;
 
 use rand_distr::Distribution;
 
-#[derive(Debug)]
-pub struct Move {
-    src: chess::Position,
-    dst: chess::Position,
-}
-
 pub fn new_chess_network() -> Result<ai::Network, rand_distr::NormalError> {
     let mut layers = vec![
         ai::Layer::new(768, 512, ai::Activation::Relu),
@@ -41,11 +35,11 @@ pub fn encode_board(board: &chess::Board) -> Vec<f64> {
     res
 }
 
-pub fn move_from_index(idx: usize) -> Move {
+pub fn move_from_index(idx: usize) -> chess::Move {
     let src_index = idx / 64;
     let dst_index = idx % 64;
 
-    Move {
+    chess::Move {
         src: ((src_index % 8) as u8, (src_index / 8) as u8),
         dst: ((dst_index % 8) as u8, (dst_index / 8) as u8),
     }
@@ -54,7 +48,7 @@ pub fn move_from_index(idx: usize) -> Move {
 pub fn next_move(
     network: &mut ai::Network,
     game: &mut chess::Game,
-) -> Result<Option<Move>, rand::distr::weighted::Error> {
+) -> Result<Option<chess::Move>, rand::distr::weighted::Error> {
     if game.until_stalemate >= 50 {
         return Ok(None);
     }
