@@ -444,6 +444,35 @@ impl Game {
         }
     }
 
+    pub fn can_move(&mut self, color: Color) -> bool {
+        for src_x in 0..8 {
+            for src_y in 0..8 {
+                let square = match self.board.get_square(src_x, src_y) {
+                    Some(v) => v,
+                    None => continue,
+                };
+
+                if color != square.color {
+                    continue;
+                }
+
+                for dst_x in 0..8 {
+                    for dst_y in 0..8 {
+                        if self.safe_move(src_x, src_y, dst_x, dst_y) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+
+        false
+    }
+
+    pub fn is_checkmate(&mut self, color: Color) -> bool {
+        self.is_check(color) && !self.can_move(color)
+    }
+
     pub fn do_move(&mut self, src_x: u8, src_y: u8, dst_x: u8, dst_y: u8) {
         if !self.safe_move(src_x, src_y, dst_x, dst_y) {
             return;
