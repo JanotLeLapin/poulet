@@ -142,6 +142,9 @@ fn main() {
     for i in 0..10 {
         println!("making generation {}", i);
         let mut networks: Vec<_> = make_generation(&elite, 64)
+        let generation = i + 1;
+
+        println!("making generation {}", generation);
             .into_iter()
             .map(|net| Arc::new(Mutex::new(net)))
             .collect();
@@ -167,6 +170,14 @@ fn main() {
                     .expect("mutex poisoned")
             })
             .collect();
+
+        if generation % 5 == 0 {
+            println!("saving elite");
+            for (i, net) in elite_networks.iter().enumerate() {
+                net.save(&format!("models/gen-{}-net-{}.model", generation, i))
+                    .unwrap();
+            }
+        }
 
         elite = Some(elite_networks)
     }
