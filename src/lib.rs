@@ -49,6 +49,7 @@ pub fn next_move(
     network: &ai::Network,
     game: &mut chess::Game,
     buffer: (&mut Vec<f64>, &mut Vec<f64>),
+    temperature: f64,
 ) -> Result<Option<chess::Move>, rand::distr::weighted::Error> {
     if game.until_stalemate >= 50 {
         return Ok(None);
@@ -74,7 +75,7 @@ pub fn next_move(
         return Ok(None);
     }
 
-    ai::softmax(buffer.0);
+    ai::softmax(buffer.0, temperature);
 
     let dist = rand::distr::weighted::WeightedIndex::new(&buffer.0[..])?;
     let rng = rand::rng();

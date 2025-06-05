@@ -38,7 +38,7 @@ fn game_loop(net_a: &poulet::ai::Network, net_b: &poulet::ai::Network) -> (f64, 
     let mut turn = 0;
     loop {
         let net = &*networks[turn];
-        let m = match poulet::next_move(net, &mut game, (&mut buf_in, &mut buf_out)) {
+        let m = match poulet::next_move(net, &mut game, (&mut buf_in, &mut buf_out), 1.0) {
             Ok(Some(v)) => v,
             _ => break,
         };

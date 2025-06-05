@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 pub enum Activation {
     None,
     Relu,
-    Softmax { temperature: f32 },
+    Softmax { temperature: f64 },
 }
 
 pub enum WeightInit {
@@ -87,7 +87,7 @@ impl Layer {
                 });
             }
             Activation::Softmax { temperature } => {
-                softmax(outputs);
+                softmax(outputs, temperature);
             }
         }
     }
@@ -169,7 +169,11 @@ impl TryFrom<Vec<u8>> for Network {
     }
 }
 
-pub fn softmax(logits: &mut Vec<f64>) {
+pub fn softmax(logits: &mut Vec<f64>, temperature: f64) {
+    for v in logits.iter_mut() {
+        *v = *v / temperature;
+    }
+
     let max = match logits
         .iter()
         .max_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
