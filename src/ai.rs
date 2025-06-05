@@ -2,7 +2,7 @@ use rand::Rng;
 use rand_distr::{Distribution, Normal};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Copy)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug)]
 pub enum Activation {
     None,
     Relu,
@@ -14,7 +14,7 @@ pub enum WeightInit {
     Xavier,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Layer {
     pub input_size: u64,
     pub output_size: u64,
@@ -95,7 +95,7 @@ impl Layer {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Network(pub Vec<Layer>);
 
 pub enum NetworkSaveError {
@@ -163,6 +163,7 @@ pub fn softmax(logits: &mut Vec<f64>) {
     }
 }
 
+#[derive(Debug)]
 pub enum OffspringError {
     UniformError(rand::distr::uniform::Error),
     WeightedIndexError(rand::distr::weighted::Error),
