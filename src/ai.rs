@@ -145,6 +145,14 @@ impl Network {
     }
 }
 
+impl TryFrom<Vec<u8>> for Network {
+    type Error = rmp_serde::decode::Error;
+
+    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+        rmp_serde::from_slice(&value[..])
+    }
+}
+
 pub fn softmax(logits: &mut Vec<f64>) {
     let max = match logits
         .iter()
