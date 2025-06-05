@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 
-use rand::seq::SliceRandom;
+use rand::{Rng, seq::SliceRandom};
 use rayon::prelude::*;
 
 static HEAT_MAP: [[u8; 8]; 8] = [
@@ -113,19 +113,61 @@ fn get_elites(scores: &Vec<f64>, n: usize) -> Vec<usize> {
     indexed.into_iter().take(n).map(|(i, _)| i).collect()
 }
 
+fn make_generation(
+    elite: &Option<Vec<poulet::ai::Network>>,
+    count: usize,
+) -> Vec<poulet::ai::Network> {
+    if let Some(elite) = elite {
+        let rng_a = rand::rng();
+        let iter_a = rng_a.sample_iter(rand::distr::Uniform::new(0, elite.len()).unwrap());
+        let rng_b = rand::rng();
+        let iter_b = rng_b.sample_iter(rand::distr::Uniform::new(0, elite.len()).unwrap());
+
+        let pair_iter = iter_a.zip(iter_b).filter(|(i, j)| i != j);
+        pair_iter
+            .map(|(i, j)| elite[i].offspring(&elite[j]).unwrap())
+            .take(count)
+            .collect()
+    } else {
+        vec![0; count]
+            .iter()
+            .map(|_| poulet::new_chess_network().unwrap())
+            .collect()
+    }
+}
+
 fn main() {
-    let mut networks: Vec<_> = (0..64)
-        .into_iter()
-        .map(|_| Arc::new(Mutex::new(poulet::new_chess_network().unwrap())))
-        .collect();
-    let matches = make_matches(networks.len(), 4);
+    let mut elite = None;
 
-    let start = std::time::Instant::now();
-    let scores = run_matches(&mut networks, &matches);
-    let duration = start.elapsed();
+    for i in 0..10 {
+        println!("making generation {}", i);
+        let mut networks: Vec<_> = make_generation(&elite, 64)
+            .into_iter()
+            .map(|net| Arc::new(Mutex::new(net)))
+            .collect();
+        println!("making matches");
+        let matches = make_matches(networks.len(), 4);
 
-    let elite = get_elites(&scores, 8);
-    println!("{:?}", elite);
+        let start = std::time::Instant::now();
+        let scores = run_matches(&mut networks, &matches);
+        let duration = start.elapsed();
+        println!("{:?}, took {:?}", scores, duration);
 
-    println!("{:?}, took {:?}", scores, duration);
+        let elite_indices = get_elites(&scores, 8);
+        let elite_arcs: Vec<_> = elite_indices.iter().map(|i| networks[*i].clone()).collect();
+
+        drop(networks);
+
+        let elite_networks: Vec<_> = elite_arcs
+            .into_iter()
+            .map(|arc| {
+                Arc::try_unwrap(arc)
+                    .expect("could not unwrap arc")
+                    .into_inner()
+                    .expect("mutex poisoned")
+            })
+            .collect();
+
+        elite = Some(elite_networks)
+    }
 }
