@@ -36,6 +36,21 @@ impl Into<usize> for PieceType {
     }
 }
 
+impl PieceType {
+    pub fn value(&self) -> u8 {
+        match self {
+            Self::Pawn => 1,
+            Self::Bishop => 3,
+            Self::Knight => 3,
+            Self::Rook => 5,
+            Self::Queen => 9,
+            Self::King => {
+                unimplemented!()
+            }
+        }
+    }
+}
+
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Piece {
     pub color: Color,
