@@ -41,6 +41,7 @@ fn game_loop(net_a: &mut poulet::ai::Network, net_b: &mut poulet::ai::Network) -
 
         if let Some(dst) = game.board.get_square(m.dst.0, m.dst.1) {
             scores[turn] += dst.piece_type.value() as f64;
+            scores[1 - turn] -= dst.piece_type.value() as f64;
         }
 
         println!("{:?}, scores: {:?}", m, scores);
