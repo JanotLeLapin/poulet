@@ -1,5 +1,7 @@
 use rand_distr::{Distribution, Normal};
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 pub enum Activation {
     None,
     Relu,
@@ -11,6 +13,7 @@ pub enum WeightInit {
     Xavier,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Layer {
     pub input_size: u64,
     pub output_size: u64,
@@ -84,9 +87,35 @@ impl Layer {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Network(pub Vec<Layer>);
 
+pub enum NetworkSaveError {
+    EncodeError(rmp_serde::encode::Error),
+    IOError(std::io::Error),
+}
+
+pub enum NetworkLoadError {
+    DecodeError(rmp_serde::decode::Error),
+    IOError(std::io::Error),
+}
+
 impl Network {
+    pub fn load(filename: &str) -> Result<Self, NetworkLoadError> {
+        rmp_serde::from_slice(
+            &std::fs::read(filename).map_err(|err| NetworkLoadError::IOError(err))?[..],
+        )
+        .map_err(|err| NetworkLoadError::DecodeError(err))
+    }
+
+    pub fn save(&self, filename: &str) -> Result<(), NetworkSaveError> {
+        std::fs::write(
+            filename,
+            rmp_serde::to_vec(self).map_err(|err| NetworkSaveError::EncodeError(err))?,
+        )
+        .map_err(|err| NetworkSaveError::IOError(err))
+    }
+
     pub fn forward(&mut self, inputs: &Vec<f64>) {
         let mut tmp = inputs;
         for layer in &mut self.0 {
