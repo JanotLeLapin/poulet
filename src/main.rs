@@ -67,12 +67,12 @@ fn game_loop(net_a: &poulet::ai::Network, net_b: &poulet::ai::Network) -> (f64, 
         turn = 1 - turn;
     }
 
-    if game.is_check(game.turn) {
+    if game.is_checkmate(game.turn) {
         println!("checkmate!");
         scores[turn] -= 1000.0;
         scores[1 - turn] += 1000.0;
     } else {
-        println!("stalemate!");
+        println!("draw!");
     }
 
     (scores[0], scores[1])
