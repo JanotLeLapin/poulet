@@ -52,7 +52,7 @@ pub type Square = Option<Piece>;
 
 pub type Position = (u8, u8);
 
-#[derive(Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct Move {
     pub src: Position,
     pub dst: Position,
@@ -106,11 +106,11 @@ impl Board {
 #[derive(Clone, Debug)]
 pub struct Game {
     pub board: Board,
-    pub total_moves: usize,
     pub until_stalemate: usize,
     pub en_passant: u8,
     pub castling_rights: [bool; 2],
     pub turn: Color,
+    pub moves: Vec<Move>,
 }
 
 impl Default for Game {
@@ -120,11 +120,11 @@ impl Default for Game {
 
         Self {
             board,
-            total_moves: 0,
             until_stalemate: 0,
             turn: Color::White,
             en_passant: 0,
             castling_rights: [true, true],
+            moves: Vec::with_capacity(512),
         }
     }
 }
@@ -486,6 +486,11 @@ impl Game {
         } else {
             Color::White
         };
+
+        self.moves.push(Move {
+            src: (src_x, src_y),
+            dst: (dst_x, dst_y),
+        });
     }
 }
 
