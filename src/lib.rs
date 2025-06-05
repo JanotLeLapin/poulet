@@ -14,7 +14,7 @@ pub fn new_chess_network() -> Result<ai::Network, rand_distr::NormalError> {
     layers[1].randomize(ai::WeightInit::He)?;
     layers[2].randomize(ai::WeightInit::Xavier)?;
 
-    Ok(layers)
+    Ok(ai::Network(layers))
 }
 
 pub fn encode_board(board: &chess::Board) -> Vec<f64> {
@@ -54,10 +54,10 @@ pub fn next_move(
     }
 
     let encoded_board = encode_board(&game.board);
-    ai::forward(network, &encoded_board);
+    network.forward(&encoded_board);
 
-    let idx = network.len() - 1;
-    let logits = &mut network[idx].outputs;
+    let idx = network.0.len() - 1;
+    let logits = &mut network.0[idx].outputs;
 
     let mut illegal_moves = 0;
     for (m, logit) in logits

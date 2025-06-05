@@ -84,7 +84,17 @@ impl Layer {
     }
 }
 
-pub type Network = Vec<Layer>;
+pub struct Network(pub Vec<Layer>);
+
+impl Network {
+    pub fn forward(&mut self, inputs: &Vec<f64>) {
+        let mut tmp = inputs;
+        for layer in &mut self.0 {
+            layer.forward(tmp);
+            tmp = &layer.outputs;
+        }
+    }
+}
 
 pub fn softmax(logits: &mut Vec<f64>) {
     let max = match logits.iter().max_by(|a, b| a.partial_cmp(b).unwrap()) {
@@ -100,13 +110,5 @@ pub fn softmax(logits: &mut Vec<f64>) {
 
     for v in logits.iter_mut() {
         *v /= sum_exp;
-    }
-}
-
-pub fn forward(network: &mut Network, inputs: &Vec<f64>) {
-    let mut tmp = inputs;
-    for layer in network {
-        layer.forward(tmp);
-        tmp = &layer.outputs;
     }
 }
