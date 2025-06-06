@@ -62,6 +62,18 @@ fn game_loop(net_a: &poulet::ai::Network, net_b: &poulet::ai::Network) -> (f64, 
             scores[1 - turn] -= dst.piece_type.value() as f64;
         }
 
+        if let Some(src) = game.board.get_square(m.src.0, m.src.1) {
+            if src.piece_type == poulet::chess::PieceType::Pawn
+                && match src.color {
+                    poulet::chess::Color::White => 7,
+                    poulet::chess::Color::Black => 0,
+                } == m.dst.1
+            {
+                scores[turn] += 8.0;
+                scores[1 - turn] -= 8.0;
+            }
+        }
+
         println!("{:?}, scores: {:?}", m, scores);
         game.do_move(m.src.0, m.src.1, m.dst.0, m.dst.1);
         turn = 1 - turn;
