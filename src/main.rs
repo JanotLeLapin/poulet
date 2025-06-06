@@ -1,8 +1,8 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
 use clap::Parser;
 
-use rand::{Rng, seq::SliceRandom};
+use rand::seq::SliceRandom;
 use rand_distr::Distribution;
 use rayon::prelude::*;
 
