@@ -487,10 +487,25 @@ impl Game {
             self.castling_rights[src.color as usize] = false;
         }
 
-        self.en_passant = 0;
-
         if PieceType::Pawn == src.piece_type {
             self.until_stalemate = 0;
+
+            let direction = match src.color {
+                Color::White => 1,
+                Color::Black => -1,
+            };
+
+            if self.get_en_passant(dst_x)
+                && src_x.abs_diff(dst_x) == 1
+                && (dst_y as i8 - src_y as i8) == direction
+                && if src.color == Color::White { 5 } else { 2 } == dst_y
+            {
+                self.board
+                    .set_square(dst_x, if src.color == Color::White { 4 } else { 3 }, None);
+            }
+
+            self.en_passant = 0;
+
             if src_y.abs_diff(dst_y) == 2 {
                 self.set_en_passant(src_x);
             }
