@@ -58,15 +58,18 @@ pub fn next_move(
     let encoded_board = encode_board(&game.board);
     network.forward(&encoded_board, (buffer.0, buffer.1));
 
+    let mut legal_moves = [true; 4096];
     let mut illegal_moves = 0;
-    for (m, logit) in buffer
+    for ((m, logit), legal_move) in buffer
         .0
         .iter_mut()
         .enumerate()
         .map(|(idx, v)| (move_from_index(idx), v))
+        .zip(legal_moves.iter_mut())
     {
         if !game.safe_move(m.src.0, m.src.1, m.dst.0, m.dst.1) {
             *logit = -f64::INFINITY;
+            *legal_move = false;
             illegal_moves += 1;
         }
     }
@@ -78,12 +81,17 @@ pub fn next_move(
     ai::softmax(buffer.0, temperature);
 
     let dist = rand::distr::weighted::WeightedIndex::new(&buffer.0[..])?;
-    let rng = rand::rng();
-    for v in dist.sample_iter(rng) {
-        let m = move_from_index(v);
-        if game.safe_move(m.src.0, m.src.1, m.dst.0, m.dst.1) {
-            return Ok(Some(m));
+    let mut rng = rand::rng();
+    let v = loop {
+        let tmp = dist.sample(&mut rng);
+        if legal_moves[tmp] {
+            break tmp;
         }
+    };
+
+    let m = move_from_index(v);
+    if game.safe_move(m.src.0, m.src.1, m.dst.0, m.dst.1) {
+        return Ok(Some(m));
     }
 
     panic!();
