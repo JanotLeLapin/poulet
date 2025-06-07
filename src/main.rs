@@ -57,9 +57,14 @@ fn game_loop(net_a: &poulet::ai::Network, net_b: &poulet::ai::Network) -> (f64, 
                 });
         }
 
-        if let Some(dst) = game.board.get_square(m.dst.0, m.dst.1) {
-            scores[turn] += dst.piece_type.value() as f64;
-            scores[1 - turn] -= dst.piece_type.value() as f64;
+        if let Some(value) = game
+            .board
+            .get_square(m.dst.0, m.dst.1)
+            .map(|piece| piece.piece_type.value())
+            .flatten()
+        {
+            scores[turn] += value as f64;
+            scores[1 - turn] -= value as f64;
         }
 
         if let Some(src) = game.board.get_square(m.src.0, m.src.1) {
