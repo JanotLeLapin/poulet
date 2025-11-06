@@ -21,24 +21,31 @@ async fn main() -> anyhow::Result<()> {
         cache: Default::default(),
     });
 
-    let input_data = (0..10_000u32).collect::<Vec<_>>();
+    let x1_data = (0..10_000u32).collect::<Vec<_>>();
+    let x2_data = (0..10_000u32).collect::<Vec<_>>();
 
-    let input_buffer = device.create_buffer_init(&BufferInitDescriptor {
-        label: Some("input"),
-        contents: bytemuck::cast_slice(&input_data),
+    let x1_buffer = device.create_buffer_init(&BufferInitDescriptor {
+        label: Some("x1"),
+        contents: bytemuck::cast_slice(&x1_data),
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
+    });
+
+    let x2_buffer = device.create_buffer_init(&BufferInitDescriptor {
+        label: Some("x2"),
+        contents: bytemuck::cast_slice(&x2_data),
         usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
     });
 
     let output_buffer = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("output"),
-        size: input_buffer.size(),
+        size: x1_buffer.size(),
         usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE,
         mapped_at_creation: false,
     });
 
     let temp_buffer = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("temp"),
-        size: input_buffer.size(),
+        size: x1_buffer.size(),
         usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
         mapped_at_creation: false,
     });
@@ -49,10 +56,14 @@ async fn main() -> anyhow::Result<()> {
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,
-                resource: input_buffer.as_entire_binding(),
+                resource: x1_buffer.as_entire_binding(),
             },
             wgpu::BindGroupEntry {
                 binding: 1,
+                resource: x2_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 2,
                 resource: output_buffer.as_entire_binding(),
             },
         ],
@@ -63,7 +74,7 @@ async fn main() -> anyhow::Result<()> {
     {
         // We specified 64 threads per workgroup in the shader, so we need to compute how many
         // workgroups we need to dispatch.
-        let num_dispatches = input_data.len().div_ceil(64) as u32;
+        let num_dispatches = x1_data.len().div_ceil(64) as u32;
 
         let mut pass = encoder.begin_compute_pass(&Default::default());
         pass.set_pipeline(&pipeline);
@@ -96,7 +107,8 @@ async fn main() -> anyhow::Result<()> {
         let output_data = temp_buffer.get_mapped_range(..);
 
         // Now we have the data on the CPU we can do what ever we want to with it
-        assert_eq!(&input_data, bytemuck::cast_slice(&output_data));
+        let output_slice: &[u32] = bytemuck::cast_slice(&output_data);
+        println!("{output_slice:?}");
     }
 
     // We need to unmap the buffer to be able to use it again
