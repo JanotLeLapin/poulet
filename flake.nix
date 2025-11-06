@@ -28,6 +28,13 @@
         craneLib = crane.mkLib pkgs;
         src = craneLib.cleanCargoSource ./.;
 
+        runtimeLibs = [
+          pkgs.mesa
+          pkgs.vulkan-loader
+          pkgs.vulkan-tools
+          pkgs.pkg-config
+        ];
+
         # Common arguments can be set here to avoid repeating them later
         commonArgs = {
           inherit src;
@@ -36,6 +43,7 @@
           buildInputs = [
             # Add additional build inputs here
           ]
+          ++ runtimeLibs
           ++ lib.optionals pkgs.stdenv.isDarwin [
             # Additional darwin specific inputs can be set here
             pkgs.libiconv
@@ -141,6 +149,10 @@
           packages = [
             pkgs.rust-analyzer
           ];
+
+          shellHook = ''
+            export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath runtimeLibs}:$LD_LIBRARY_PATH"
+          '';
         };
       }
     );
