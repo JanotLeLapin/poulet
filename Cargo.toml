@@ -1,16 +1,3 @@
-[package]
-name = "poulet"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-clap = { version = "4.5", features = ["derive"] }
-
-rand = "0.9.1"
-rand_distr = "0.5.1"
-
-serde = { version = "1.0", features = ["derive"] }
-rmp = "0.8"
-rmp-serde = "1.3"
-
-rayon = "1.10"
+[workspace]
+resolver = "3"
+members = ["chess"]
