@@ -108,17 +108,6 @@ name = "chess"
 version = "0.1.0"
 
 [[package]]
-name = "cnn"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bytemuck",
- "flume",
- "tokio",
- "wgpu",
-]
-
-[[package]]
 name = "codespan-reporting"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -524,6 +513,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ee6cda3051665f1fb8d9e08fc35c96d5a244fb1be711a03b71118828afc9a873"
 dependencies = [
  "jni-sys",
+]
+
+[[package]]
+name = "nn"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytemuck",
+ "flume",
+ "tokio",
+ "wgpu",
 ]
 
 [[package]]
