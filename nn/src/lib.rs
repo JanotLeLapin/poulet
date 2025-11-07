@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use rand_distr::Distribution;
+
 use flume::bounded;
 use poulet_chess::{Board, Color, Piece, PieceType};
 use wgpu::{
@@ -27,6 +29,12 @@ pub struct DenseLayer {
     temp_buffer: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
     output_size: usize,
+}
+
+pub struct Player {
+    hidden_layer_a: DenseLayer,
+    hidden_layer_b: DenseLayer,
+    output_layer: DenseLayer,
 }
 
 impl State {
@@ -185,6 +193,67 @@ impl DenseLayer {
         self.temp_buffer.unmap();
 
         Ok(res)
+    }
+}
+
+impl Player {
+    pub fn new(state: &State) -> anyhow::Result<Self> {
+        let rng = rand::rng();
+        let distr_a = rand_distr::Normal::new(0.0, (2.0 / 768.0f32).sqrt())?;
+        let distr_b = rand_distr::Normal::new(0.0, (2.0 / 512.0f32).sqrt())?;
+
+        let weights_data_a: Vec<f32> = distr_a.sample_iter(rng.clone()).take(768 * 512).collect();
+        let biases_data_a: Vec<f32> = (0..512).map(|_| 0.0 as f32).collect();
+
+        let weights_data_b: Vec<f32> = distr_b.sample_iter(rng.clone()).take(512 * 512).collect();
+        let biases_data_b: Vec<f32> = (0..512).map(|_| 0.0 as f32).collect();
+
+        let weights_data_output: Vec<f32> =
+            distr_b.sample_iter(rng.clone()).take(512 * 4096).collect();
+        let biases_data_output: Vec<f32> = (0..4096).map(|_| 0.0 as f32).collect();
+
+        let hidden_layer_a = DenseLayer::new(
+            state.device.clone(),
+            state.queue.clone(),
+            state.pipeline.clone(),
+            &weights_data_a,
+            &biases_data_a,
+            768,
+            512,
+        );
+
+        let hidden_layer_b = DenseLayer::new(
+            state.device.clone(),
+            state.queue.clone(),
+            state.pipeline.clone(),
+            &weights_data_b,
+            &biases_data_b,
+            512,
+            512,
+        );
+
+        let output_layer = DenseLayer::new(
+            state.device.clone(),
+            state.queue.clone(),
+            state.pipeline.clone(),
+            &weights_data_output,
+            &biases_data_output,
+            512,
+            4096,
+        );
+
+        Ok(Self {
+            hidden_layer_a,
+            hidden_layer_b,
+            output_layer,
+        })
+    }
+
+    pub async fn forward(&self, input: &[f32]) -> anyhow::Result<Vec<f32>> {
+        let out = self.hidden_layer_a.forward(input).await?;
+        let out = self.hidden_layer_b.forward(&out).await?;
+        let out = self.output_layer.forward(&out).await?;
+        Ok(out)
     }
 }
 
