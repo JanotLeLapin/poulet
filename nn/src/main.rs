@@ -36,11 +36,10 @@ async fn main() -> anyhow::Result<()> {
         output_size: 512,
     };
 
-    let input_data: Vec<f32> = distr
-        .sample_iter(rng.clone())
-        .take(params.input_size as usize)
-        .collect();
-    let biases_data: Vec<f32> = (0..params.input_size).map(|v| v as f32).collect();
+    let mut input_data: Vec<f32> = (0..768).map(|_| 0.0 as f32).collect();
+    encode_board(&poulet_chess::Game::default().board, &mut input_data);
+
+    let biases_data: Vec<f32> = (0..params.input_size).map(|_| 0.0 as f32).collect();
     let weights_data: Vec<f32> = distr
         .sample_iter(rng)
         .take(params.input_size as usize * params.output_size as usize)
