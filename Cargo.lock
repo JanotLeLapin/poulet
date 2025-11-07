@@ -104,10 +104,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
-name = "chess"
-version = "0.1.0"
-
-[[package]]
 name = "codespan-reporting"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -528,18 +524,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nn"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "bytemuck",
- "flume",
- "rand",
- "tokio",
- "wgpu",
-]
-
-[[package]]
 name = "num-traits"
 version = "0.2.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -627,6 +611,23 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d8a2f0d8d040d7848a709caf78912debcc3f33ee4b3cac47d73d1e1069e83507"
 dependencies = [
  "portable-atomic",
+]
+
+[[package]]
+name = "poulet-chess"
+version = "0.1.0"
+
+[[package]]
+name = "poulet-nn"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bytemuck",
+ "flume",
+ "poulet-chess",
+ "rand",
+ "tokio",
+ "wgpu",
 ]
 
 [[package]]
