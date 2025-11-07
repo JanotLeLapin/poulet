@@ -1,5 +1,11 @@
 use flume::bounded;
+use rand::distr::Distribution;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
+
+struct LayerParams {
+    input_size: u32,
+    output_size: u32,
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -16,37 +22,58 @@ async fn main() -> anyhow::Result<()> {
         label: Some("Introduction Compute Pipeline"),
         layout: None,
         module: &shader,
-        entry_point: None,
+        entry_point: Some("dense"),
         compilation_options: Default::default(),
         cache: Default::default(),
     });
 
-    let x1_data = (0..10_000u32).collect::<Vec<_>>();
-    let x2_data = (0..10_000u32).collect::<Vec<_>>();
+    let rng = rand::rng();
+    let distr = rand::distr::Uniform::new(-1.0, 1.0)?;
 
-    let x1_buffer = device.create_buffer_init(&BufferInitDescriptor {
-        label: Some("x1"),
-        contents: bytemuck::cast_slice(&x1_data),
+    let params = LayerParams {
+        input_size: 768,
+        output_size: 512,
+    };
+
+    let input_data: Vec<f32> = distr
+        .sample_iter(rng.clone())
+        .take(params.input_size as usize)
+        .collect();
+    let biases_data: Vec<f32> = (0..params.input_size).map(|v| v as f32).collect();
+    let weights_data: Vec<f32> = distr
+        .sample_iter(rng)
+        .take(params.input_size as usize * params.output_size as usize)
+        .collect();
+
+    let input_buffer = device.create_buffer_init(&BufferInitDescriptor {
+        label: Some("input"),
+        contents: bytemuck::cast_slice(&input_data),
         usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
     });
 
-    let x2_buffer = device.create_buffer_init(&BufferInitDescriptor {
-        label: Some("x2"),
-        contents: bytemuck::cast_slice(&x2_data),
+    let biases_buffer = device.create_buffer_init(&BufferInitDescriptor {
+        label: Some("biases"),
+        contents: bytemuck::cast_slice(&biases_data),
         usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
     });
 
-    let output_buffer = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("output"),
-        size: x1_buffer.size(),
-        usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE,
-        mapped_at_creation: false,
+    let weights_buffer = device.create_buffer_init(&BufferInitDescriptor {
+        label: Some("weights"),
+        contents: bytemuck::cast_slice(&weights_data),
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
     });
 
     let temp_buffer = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("temp"),
-        size: x1_buffer.size(),
+        size: params.output_size as u64 * std::mem::size_of::<f32>() as u64,
         usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: false,
+    });
+
+    let output_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("output"),
+        size: params.output_size as u64 * std::mem::size_of::<f32>() as u64,
+        usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE,
         mapped_at_creation: false,
     });
 
@@ -56,14 +83,18 @@ async fn main() -> anyhow::Result<()> {
         entries: &[
             wgpu::BindGroupEntry {
                 binding: 0,
-                resource: x1_buffer.as_entire_binding(),
+                resource: input_buffer.as_entire_binding(),
             },
             wgpu::BindGroupEntry {
                 binding: 1,
-                resource: x2_buffer.as_entire_binding(),
+                resource: biases_buffer.as_entire_binding(),
             },
             wgpu::BindGroupEntry {
                 binding: 2,
+                resource: weights_buffer.as_entire_binding(),
+            },
+            wgpu::BindGroupEntry {
+                binding: 3,
                 resource: output_buffer.as_entire_binding(),
             },
         ],
@@ -74,7 +105,7 @@ async fn main() -> anyhow::Result<()> {
     {
         // We specified 64 threads per workgroup in the shader, so we need to compute how many
         // workgroups we need to dispatch.
-        let num_dispatches = x1_data.len().div_ceil(64) as u32;
+        let num_dispatches = (params.output_size).div_ceil(64) as u32;
 
         let mut pass = encoder.begin_compute_pass(&Default::default());
         pass.set_pipeline(&pipeline);
@@ -107,8 +138,17 @@ async fn main() -> anyhow::Result<()> {
         let output_data = temp_buffer.get_mapped_range(..);
 
         // Now we have the data on the CPU we can do what ever we want to with it
-        let output_slice: &[u32] = bytemuck::cast_slice(&output_data);
-        println!("{output_slice:?}");
+        let output_slice: &[f32] = bytemuck::cast_slice(&output_data);
+        println!("input = {input_data:?}");
+        println!("weights = {weights_data:?}");
+        println!("output = {output_slice:?}");
+
+        println!(
+            "input len = {}, weights len = {}, output len = {}",
+            input_data.len(),
+            weights_data.len(),
+            output_slice.len()
+        );
     }
 
     // We need to unmap the buffer to be able to use it again
