@@ -1,4 +1,5 @@
 use flume::bounded;
+use poulet_nn::encode_board;
 use rand::distr::Distribution;
 use wgpu::util::{BufferInitDescriptor, DeviceExt};
 
@@ -28,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
     });
 
     let rng = rand::rng();
-    let distr = rand::distr::Uniform::new(-1.0, 1.0)?;
+    let distr = rand::distr::Uniform::new(-0.0884, 0.0884)?;
 
     let params = LayerParams {
         input_size: 768,
