@@ -8,12 +8,12 @@ use wgpu::{
 };
 
 pub struct State {
-    pub instance: wgpu::Instance,
-    pub adapter: wgpu::Adapter,
-    pub device: wgpu::Device,
-    pub queue: wgpu::Queue,
-    pub shader: wgpu::ShaderModule,
-    pub pipeline: wgpu::ComputePipeline,
+    pub instance: Arc<wgpu::Instance>,
+    pub adapter: Arc<wgpu::Adapter>,
+    pub device: Arc<wgpu::Device>,
+    pub queue: Arc<wgpu::Queue>,
+    pub shader: Arc<wgpu::ShaderModule>,
+    pub pipeline: Arc<wgpu::ComputePipeline>,
 }
 
 pub struct DenseLayer {
@@ -50,12 +50,12 @@ impl State {
         });
 
         Self {
-            instance,
-            adapter,
-            device,
-            queue,
-            shader,
-            pipeline,
+            instance: Arc::new(instance),
+            adapter: Arc::new(adapter),
+            device: Arc::new(device),
+            queue: Arc::new(queue),
+            shader: Arc::new(shader),
+            pipeline: Arc::new(pipeline),
         }
     }
 }
