@@ -1,6 +1,8 @@
 use burn::{Tensor, backend::Wgpu, tensor::TensorData};
 use poulet_chess::{Board, Color, Game, Piece, PieceType};
 
+use crate::model::predict_move;
+
 mod model;
 
 fn encode_board(board: &Board, neurons: &mut Vec<f32>) {
@@ -37,5 +39,16 @@ fn main() {
     let device = Default::default();
     let model = model::ModelConfig::new().init::<MyBackend>(&device);
 
+    let mut neurons = (0..768).map(|_| 0.0).collect();
+    let mut game = Game::default();
+    encode_board(&game.board, &mut neurons);
+    let data = TensorData::new(neurons, [1, 768]);
+    let tensor: Tensor<MyBackend, 2> = Tensor::from_floats(data, &device);
+
+    let logits = model.forward(tensor);
+
     println!("{model:#?}");
+
+    let res = predict_move(vec![&mut game], logits, &device);
+    println!("{res:?}");
 }
