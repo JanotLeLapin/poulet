@@ -3242,6 +3242,7 @@ name = "poulet-nn"
 version = "0.1.0"
 dependencies = [
  "burn",
+ "poulet-chess",
 ]
 
 [[package]]
