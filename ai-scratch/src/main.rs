@@ -13,7 +13,7 @@ async fn main() -> anyhow::Result<()> {
 
     let logits = player.forward(&input_data).await?;
 
-    let next_move = predict_move(&mut game, logits);
+    let next_move = predict_move(&mut game, logits, 1.0);
 
     println!("{next_move:?}");
 

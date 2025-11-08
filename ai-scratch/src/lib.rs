@@ -258,7 +258,11 @@ impl Player {
     }
 }
 
-pub fn predict_move(game: &mut Game, mut logits: Vec<f32>) -> (f32, u8, u8, u8, u8) {
+pub fn predict_move(
+    game: &mut Game,
+    mut logits: Vec<f32>,
+    temperature: f32,
+) -> (f32, u8, u8, u8, u8) {
     for i in 0..4096 {
         let (src_file, src_rank, dst_file, dst_rank) = decode_move(i);
         if !game
@@ -278,7 +282,7 @@ pub fn predict_move(game: &mut Game, mut logits: Vec<f32>) -> (f32, u8, u8, u8, 
     }
 
     let max: f32 = logits.iter().copied().fold(f32::NEG_INFINITY, f32::max);
-    let exp_sum: f32 = logits.iter().map(|v| (v - max).exp()).sum();
+    let exp_sum: f32 = logits.iter().map(|v| ((v - max) / temperature).exp()).sum();
     logits
         .iter_mut()
         .for_each(|v| *v = (*v - max).exp() / exp_sum);
