@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use poulet_ai_common::encode_board;
 use poulet_chess::Game;
 use rand_distr::Distribution;
@@ -169,7 +171,7 @@ impl Generation {
             .for_each(|p| p.play(&self.players));
     }
 
-    pub fn get_elite(&self, count: usize) -> Vec<usize> {
+    pub fn get_elite(self, count: usize) -> Vec<Player> {
         let mut scores: Vec<f32> = (0..PLAYER_PER_GEN).map(|_| 0.0).collect();
         for p in self.pools.iter() {
             for m in p.matches.iter() {
@@ -182,6 +184,12 @@ impl Generation {
         let mut enumerated: Vec<(usize, f32)> = scores.into_iter().enumerate().collect();
         enumerated.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
 
-        enumerated.iter().map(|(i, _)| *i).take(count).collect()
+        let indices: HashSet<_> = enumerated.iter().map(|(i, _)| *i).take(count).collect();
+
+        self.players
+            .into_iter()
+            .enumerate()
+            .filter_map(|(i, p)| indices.contains(&i).then_some(p))
+            .collect()
     }
 }
