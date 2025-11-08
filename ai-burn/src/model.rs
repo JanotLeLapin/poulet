@@ -1,9 +1,11 @@
+use poulet_ai_common::decode_move;
+use poulet_chess::Game;
+
 use burn::{
     nn::{Linear, LinearConfig, Relu},
     prelude::*,
     tensor::activation::softmax,
 };
-use poulet_chess::Game;
 
 #[derive(Config, Debug)]
 pub struct ModelConfig {
@@ -41,18 +43,6 @@ impl<B: Backend> Model<B> {
     }
 }
 
-fn idx_to_move(i: usize) -> (u8, u8, u8, u8) {
-    let src = i / 64;
-    let dst = i % 64;
-
-    (
-        (src % 8) as u8,
-        (src / 8) as u8,
-        (dst % 8) as u8,
-        (dst / 8) as u8,
-    )
-}
-
 pub fn predict_move<B: Backend>(
     games: Vec<&mut Game>,
     logits: Tensor<B, 2>,
@@ -63,7 +53,7 @@ pub fn predict_move<B: Backend>(
 
     for game in games {
         for i in 0..4096 {
-            let (src_x, src_y, dst_x, dst_y) = idx_to_move(i);
+            let (src_x, src_y, dst_x, dst_y) = decode_move(i);
             mask.push(
                 if game
                     .board
@@ -101,7 +91,7 @@ pub fn predict_move<B: Backend>(
         .iter()
         .zip(indices_col)
         .map(|(score, idx)| {
-            let (src_x, src_y, dst_x, dst_y) = idx_to_move(idx as usize);
+            let (src_x, src_y, dst_x, dst_y) = decode_move(idx as usize);
             (*score, src_x, src_y, dst_x, dst_y)
         })
         .collect()

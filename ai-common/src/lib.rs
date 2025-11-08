@@ -30,3 +30,15 @@ pub fn encode_board(board: &Board) -> Vec<f32> {
 
     neurons
 }
+
+pub fn decode_move(i: usize) -> (u8, u8, u8, u8) {
+    let src = i / 64;
+    let dst = i % 64;
+
+    (
+        (src % 8) as u8,
+        (src / 8) as u8,
+        (dst % 8) as u8,
+        (dst / 8) as u8,
+    )
+}
