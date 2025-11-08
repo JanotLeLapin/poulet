@@ -4,12 +4,23 @@ pub enum Color {
     Black,
 }
 
-impl Into<usize> for Color {
-    fn into(self) -> usize {
-        match self {
-            Self::White => 0,
-            Self::Black => 1,
+impl From<Color> for usize {
+    fn from(value: Color) -> Self {
+        match value {
+            Color::White => 0,
+            Color::Black => 1,
         }
+    }
+}
+
+impl TryFrom<usize> for Color {
+    type Error = ();
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        Ok(match value {
+            0 => Self::White,
+            1 => Self::Black,
+            _ => return Err(()),
+        })
     }
 }
 
@@ -23,16 +34,31 @@ pub enum PieceType {
     King,
 }
 
-impl Into<usize> for PieceType {
-    fn into(self) -> usize {
-        match self {
-            Self::Pawn => 0,
-            Self::Bishop => 1,
-            Self::Knight => 2,
-            Self::Rook => 3,
-            Self::Queen => 4,
-            Self::King => 5,
+impl From<PieceType> for usize {
+    fn from(value: PieceType) -> Self {
+        match value {
+            PieceType::Pawn => 0,
+            PieceType::Bishop => 1,
+            PieceType::Knight => 2,
+            PieceType::Rook => 3,
+            PieceType::Queen => 4,
+            PieceType::King => 5,
         }
+    }
+}
+
+impl TryFrom<usize> for PieceType {
+    type Error = ();
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        Ok(match value {
+            0 => Self::Pawn,
+            1 => Self::Bishop,
+            2 => Self::Knight,
+            3 => Self::Rook,
+            4 => Self::Queen,
+            5 => Self::King,
+            _ => return Err(()),
+        })
     }
 }
 
