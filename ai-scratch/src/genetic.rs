@@ -1,10 +1,13 @@
 use poulet_ai_common::encode_board;
 use poulet_chess::Game;
+use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 
 use crate::model::{Player, State, predict_move};
 
+use futures::executor::block_on;
+
 pub const GAME_PER_PLAYER: usize = 8;
-pub const POOL_COUNT: usize = 1;
+pub const POOL_COUNT: usize = 2;
 
 pub const PLAYER_PER_GEN: usize = POOL_COUNT * (GAME_PER_PLAYER + 1);
 
@@ -32,7 +35,7 @@ impl Match {
         }
     }
 
-    pub async fn match_loop(&mut self, players: &Vec<Player>) {
+    pub fn match_loop(&mut self, players: &Vec<Player>) {
         let players = self.player_indices.map(|i| players.get(i).unwrap());
 
         let mut game = Game::default();
@@ -46,7 +49,7 @@ impl Match {
             next = (current + 1) % 2;
 
             let neurons = encode_board(&game.board);
-            let logits = players[current].forward(&neurons).await.unwrap();
+            let logits = block_on(async { players[current].forward(&neurons).await }).unwrap();
             let res = match predict_move(&mut game, logits, 1.0) {
                 Ok(res) => res,
                 Err(_) => break,
@@ -108,9 +111,9 @@ impl Pool {
         Self { matches }
     }
 
-    pub async fn play(&mut self, players: &Vec<Player>) {
+    pub fn play(&mut self, players: &Vec<Player>) {
         for m in self.matches.iter_mut() {
-            m.match_loop(players).await;
+            m.match_loop(players);
         }
     }
 }
@@ -133,9 +136,9 @@ impl Generation {
         Self { players, pools }
     }
 
-    pub async fn play(&mut self) {
-        for p in self.pools.iter_mut() {
-            p.play(&self.players).await;
-        }
+    pub fn play(&mut self) {
+        self.pools
+            .par_iter_mut()
+            .for_each(|p| p.play(&self.players));
     }
 }
