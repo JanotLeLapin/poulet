@@ -1,5 +1,5 @@
 use poulet_ai_common::encode_board;
-use poulet_ai_scratch::{Player, State};
+use poulet_ai_scratch::{Player, State, predict_move};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -7,10 +7,15 @@ async fn main() -> anyhow::Result<()> {
 
     let player = Player::new(&state)?;
 
-    let input_data = encode_board(&poulet_chess::Game::default().board);
+    let mut game = poulet_chess::Game::default();
 
-    let res = player.forward(&input_data).await?;
-    println!("{res:?}");
+    let input_data = encode_board(&game.board);
+
+    let logits = player.forward(&input_data).await?;
+
+    let next_move = predict_move(&mut game, logits);
+
+    println!("{next_move:?}");
 
     Ok(())
 }

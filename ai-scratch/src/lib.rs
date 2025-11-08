@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use poulet_ai_common::decode_move;
+use poulet_chess::Game;
 use rand_distr::Distribution;
 
 use flume::bounded;
@@ -254,4 +256,40 @@ impl Player {
         let out = self.output_layer.forward(&out).await?;
         Ok(out)
     }
+}
+
+pub fn predict_move(game: &mut Game, mut logits: Vec<f32>) -> (f32, u8, u8, u8, u8) {
+    for i in 0..4096 {
+        let (src_file, src_rank, dst_file, dst_rank) = decode_move(i);
+        if !game
+            .board
+            .get_square(src_file, src_rank)
+            .map(|p| game.can_move(p.color))
+            .unwrap_or(false)
+            || !game.safe_move(
+                src_file as u8,
+                src_rank as u8,
+                dst_file as u8,
+                dst_rank as u8,
+            )
+        {
+            logits[i] = f32::NEG_INFINITY;
+        }
+    }
+
+    let max: f32 = logits.iter().copied().fold(f32::NEG_INFINITY, f32::max);
+    let exp_sum: f32 = logits.iter().map(|v| (v - max).exp()).sum();
+    logits
+        .iter_mut()
+        .for_each(|v| *v = (*v - max).exp() / exp_sum);
+
+    let (i, p) = logits
+        .iter()
+        .enumerate()
+        .max_by(|(_, x), (_, y)| x.partial_cmp(y).unwrap())
+        .unwrap();
+
+    let (src_file, src_rank, dst_file, dst_rank) = decode_move(i);
+
+    (*p, src_file, src_rank, dst_file, dst_rank)
 }
