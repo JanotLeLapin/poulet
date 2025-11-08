@@ -141,4 +141,20 @@ impl Generation {
             .par_iter_mut()
             .for_each(|p| p.play(&self.players));
     }
+
+    pub fn get_elite(&self, count: usize) -> Vec<usize> {
+        let mut scores: Vec<f32> = (0..PLAYER_PER_GEN).map(|_| 0.0).collect();
+        for p in self.pools.iter() {
+            for m in p.matches.iter() {
+                let [w, b] = m.player_indices;
+                scores[w] += m.white_score;
+                scores[b] += m.black_score;
+            }
+        }
+
+        let mut enumerated: Vec<(usize, f32)> = scores.into_iter().enumerate().collect();
+        enumerated.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
+
+        enumerated.iter().map(|(i, _)| *i).take(count).collect()
+    }
 }
