@@ -614,11 +614,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "poulet-chess"
-version = "0.1.0"
-
-[[package]]
-name = "poulet-nn"
+name = "poulet-ai-scratch"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -630,6 +626,10 @@ dependencies = [
  "tokio",
  "wgpu",
 ]
+
+[[package]]
+name = "poulet-chess"
+version = "0.1.0"
 
 [[package]]
 name = "ppv-lite86"
