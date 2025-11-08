@@ -3234,16 +3234,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "poulet-chess"
-version = "0.1.0"
-
-[[package]]
-name = "poulet-nn"
+name = "poulet-ai-burn"
 version = "0.1.0"
 dependencies = [
  "burn",
  "poulet-chess",
 ]
+
+[[package]]
+name = "poulet-chess"
+version = "0.1.0"
 
 [[package]]
 name = "powerfmt"
