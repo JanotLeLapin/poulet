@@ -5,5 +5,6 @@ edition = "2024"
 
 [dependencies]
 poulet-chess = { path = "../chess" }
+poulet-ai-common = { path = "../ai-common" }
 
 burn = { version = "0.19.1", features = ["std", "tui", "train", "wgpu", "fusion"], default-features = false }

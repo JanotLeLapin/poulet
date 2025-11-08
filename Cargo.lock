@@ -3294,6 +3294,14 @@ name = "poulet-ai-burn"
 version = "0.1.0"
 dependencies = [
  "burn",
+ "poulet-ai-common",
+ "poulet-chess",
+]
+
+[[package]]
+name = "poulet-ai-common"
+version = "0.1.0"
+dependencies = [
  "poulet-chess",
 ]
 
@@ -3304,6 +3312,7 @@ dependencies = [
  "anyhow",
  "bytemuck",
  "flume",
+ "poulet-ai-common",
  "poulet-chess",
  "rand",
  "rand_distr",

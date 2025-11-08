@@ -1,4 +1,5 @@
-use poulet_ai_scratch::{Player, State, encode_board};
+use poulet_ai_common::encode_board;
+use poulet_ai_scratch::{Player, State};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -6,8 +7,7 @@ async fn main() -> anyhow::Result<()> {
 
     let player = Player::new(&state)?;
 
-    let mut input_data: Vec<f32> = (0..768).map(|_| 0.0 as f32).collect();
-    encode_board(&poulet_chess::Game::default().board, &mut input_data);
+    let input_data = encode_board(&poulet_chess::Game::default().board);
 
     let res = player.forward(&input_data).await?;
     println!("{res:?}");
