@@ -1,5 +1,5 @@
 use poulet_ai_common::encode_board;
-use poulet_ai_scratch::{Player, State, predict_move};
+use poulet_ai_scratch::model::{Player, State, predict_move};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
