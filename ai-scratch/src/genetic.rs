@@ -84,6 +84,10 @@ impl Match {
 
         println!("{:?} done, scores: {:?}", self.player_indices, scores);
 
+        if is_checkmate {
+            println!("fen: {:?}", game.board.fen());
+        }
+
         self.white_score = scores[0];
         self.black_score = scores[1];
     }
