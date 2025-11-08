@@ -262,7 +262,7 @@ pub fn predict_move(
     game: &mut Game,
     mut logits: Vec<f32>,
     temperature: f32,
-) -> (f32, u8, u8, u8, u8) {
+) -> Result<(f32, u8, u8, u8, u8), rand::distr::weighted::Error> {
     for i in 0..4096 {
         let (src_file, src_rank, dst_file, dst_rank) = decode_move(i);
         if !game
@@ -288,10 +288,10 @@ pub fn predict_move(
         .for_each(|v| *v = (*v - max).exp() / exp_sum);
 
     let mut rng = rand::rng();
-    let distr = rand::distr::weighted::WeightedIndex::new(&logits).unwrap();
+    let distr = rand::distr::weighted::WeightedIndex::new(&logits)?;
     let i = distr.sample(&mut rng);
 
     let (src_file, src_rank, dst_file, dst_rank) = decode_move(i);
 
-    (logits[i], src_file, src_rank, dst_file, dst_rank)
+    Ok((logits[i], src_file, src_rank, dst_file, dst_rank))
 }
