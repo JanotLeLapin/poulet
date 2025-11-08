@@ -329,13 +329,19 @@ impl Player {
         Ok(())
     }
 
-    pub fn crossover(&self, state: &State, other: &Self, alpha: f32) -> Self {
+    pub fn crossover_and_mutate(
+        &self,
+        state: &State,
+        other: &Self,
+        alpha: f32,
+        deviation: f32,
+    ) -> Self {
         let mut a = self.hidden_layer_a_params.clone();
         let mut b = self.hidden_layer_b_params.clone();
         let mut out = self.output_layer_params.clone();
-        out.crossover_and_mutate(&other.output_layer_params, alpha, 0.1);
-        a.crossover_and_mutate(&other.hidden_layer_a_params, alpha, 0.1);
-        b.crossover_and_mutate(&other.hidden_layer_b_params, alpha, 0.1);
+        out.crossover_and_mutate(&other.output_layer_params, alpha, deviation);
+        a.crossover_and_mutate(&other.hidden_layer_a_params, alpha, deviation);
+        b.crossover_and_mutate(&other.hidden_layer_b_params, alpha, deviation);
 
         Self::new(state, a, b, out)
     }

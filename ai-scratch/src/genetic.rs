@@ -1,5 +1,6 @@
 use poulet_ai_common::encode_board;
 use poulet_chess::Game;
+use rand_distr::Distribution;
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 
 use crate::model::{Player, State, predict_move};
@@ -119,12 +120,7 @@ impl Pool {
 }
 
 impl Generation {
-    pub fn init(state: &State) -> Self {
-        let (player_indices, players): (Vec<usize>, Vec<Player>) = (0..PLAYER_PER_GEN)
-            .map(|_| Player::init(state).unwrap())
-            .enumerate()
-            .unzip();
-
+    pub fn new(player_indices: Vec<usize>, players: Vec<Player>) -> Self {
         let pools = (0..POOL_COUNT)
             .map(|i| {
                 Pool::init(
@@ -134,6 +130,37 @@ impl Generation {
             .collect();
 
         Self { players, pools }
+    }
+
+    pub fn init(state: &State) -> Self {
+        let (player_indices, players) = (0..PLAYER_PER_GEN)
+            .map(|_| Player::init(state).unwrap())
+            .enumerate()
+            .unzip();
+
+        Self::new(player_indices, players)
+    }
+
+    pub fn populate(state: &State, elite: Vec<Player>) -> Self {
+        let mut rng = rand::rng();
+        let distr = rand::distr::Uniform::new(0, elite.len()).unwrap();
+
+        let (player_indices, players) = (0..PLAYER_PER_GEN)
+            .map(|_| {
+                elite
+                    .get(distr.sample(&mut rng))
+                    .unwrap()
+                    .crossover_and_mutate(
+                        state,
+                        elite.get(distr.sample(&mut rng)).unwrap(),
+                        0.5,
+                        0.1,
+                    )
+            })
+            .enumerate()
+            .unzip();
+
+        Self::new(player_indices, players)
     }
 
     pub fn play(&mut self) {
