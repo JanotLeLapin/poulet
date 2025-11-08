@@ -64,7 +64,7 @@ pub fn predict_move<B: Backend>(
                 {
                     0.0
                 } else {
-                    -f32::INFINITY
+                    f32::NEG_INFINITY
                 },
             );
         }
