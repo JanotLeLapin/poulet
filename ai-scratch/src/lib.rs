@@ -283,13 +283,11 @@ pub fn predict_move(game: &mut Game, mut logits: Vec<f32>) -> (f32, u8, u8, u8, 
         .iter_mut()
         .for_each(|v| *v = (*v - max).exp() / exp_sum);
 
-    let (i, p) = logits
-        .iter()
-        .enumerate()
-        .max_by(|(_, x), (_, y)| x.partial_cmp(y).unwrap())
-        .unwrap();
+    let mut rng = rand::rng();
+    let distr = rand::distr::weighted::WeightedIndex::new(&logits).unwrap();
+    let i = distr.sample(&mut rng);
 
     let (src_file, src_rank, dst_file, dst_rank) = decode_move(i);
 
-    (*p, src_file, src_rank, dst_file, dst_rank)
+    (logits[i], src_file, src_rank, dst_file, dst_rank)
 }
