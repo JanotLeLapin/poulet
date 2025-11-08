@@ -121,7 +121,7 @@ impl Pool {
 impl Generation {
     pub fn init(state: &State) -> Self {
         let (player_indices, players): (Vec<usize>, Vec<Player>) = (0..PLAYER_PER_GEN)
-            .map(|_| Player::new(state).unwrap())
+            .map(|_| Player::init(state).unwrap())
             .enumerate()
             .unzip();
 
