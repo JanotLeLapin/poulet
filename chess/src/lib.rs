@@ -142,6 +142,53 @@ impl Board {
     pub fn set_square(&mut self, x: u8, y: u8, square: Square) {
         self.0[(y * 8 + x) as usize] = square;
     }
+
+    pub fn fen(&self) -> String {
+        let mut res = String::new();
+        let mut void = 0;
+        for rank in 0..8 {
+            for file in 0..8 {
+                let piece = match self.get_square(file, rank) {
+                    Some(piece) => piece,
+                    None => {
+                        void += 1;
+                        continue;
+                    }
+                };
+
+                if void > 0 {
+                    res.push_str(&void.to_string());
+                    void = 0;
+                }
+
+                let c = match piece.piece_type {
+                    PieceType::Pawn => 'p',
+                    PieceType::Bishop => 'b',
+                    PieceType::Knight => 'n',
+                    PieceType::Rook => 'r',
+                    PieceType::Queen => 'q',
+                    PieceType::King => 'k',
+                };
+
+                res.push(if piece.color == Color::White {
+                    c.to_ascii_uppercase()
+                } else {
+                    c
+                });
+            }
+
+            if void > 0 {
+                res.push_str(&void.to_string());
+                void = 0;
+            }
+
+            res.push('/');
+        }
+
+        res.push_str(" w - - 0 1");
+
+        res
+    }
 }
 
 #[derive(Clone, Debug)]
