@@ -20,7 +20,7 @@ pub struct State {
     pub pipeline: Arc<wgpu::ComputePipeline>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct DenseLayerParams {
     input_size: usize,
     output_size: usize,
@@ -45,6 +45,7 @@ pub struct Player {
     hidden_layer_a_params: DenseLayerParams,
     hidden_layer_b_params: DenseLayerParams,
     output_layer_params: DenseLayerParams,
+
     hidden_layer_a: DenseLayer,
     hidden_layer_b: DenseLayer,
     output_layer: DenseLayer,
@@ -77,6 +78,30 @@ impl State {
             queue: Arc::new(queue),
             shader: Arc::new(shader),
             pipeline: Arc::new(pipeline),
+        }
+    }
+}
+
+impl DenseLayerParams {
+    pub fn crossover_and_mutate(&mut self, other: &Self, alpha: f32, deviation: f32) {
+        let mut rng = rand::rng();
+        let distr = rand_distr::Normal::new(0.0, deviation).unwrap();
+
+        let self_weights = &mut self.weights;
+        let self_biases = &mut self.biases;
+
+        let other_weights = &other.weights;
+        let other_biases = &other.biases;
+
+        for (self_params, other_params) in
+            [(self_weights, other_weights), (self_biases, other_biases)]
+        {
+            self_params
+                .iter_mut()
+                .zip(other_params)
+                .for_each(|(self_p, other_p)| {
+                    *self_p = (*self_p * alpha + other_p * (1.0 - alpha)) + distr.sample(&mut rng);
+                });
         }
     }
 }
@@ -302,6 +327,17 @@ impl Player {
         std::fs::write(path, &bytes)?;
 
         Ok(())
+    }
+
+    pub fn crossover(&self, state: &State, other: &Self, alpha: f32) -> Self {
+        let mut a = self.hidden_layer_a_params.clone();
+        let mut b = self.hidden_layer_b_params.clone();
+        let mut out = self.output_layer_params.clone();
+        out.crossover_and_mutate(&other.output_layer_params, alpha, 0.1);
+        a.crossover_and_mutate(&other.hidden_layer_a_params, alpha, 0.1);
+        b.crossover_and_mutate(&other.hidden_layer_b_params, alpha, 0.1);
+
+        Self::new(state, a, b, out)
     }
 
     pub async fn forward(&self, input: &[f32]) -> anyhow::Result<Vec<f32>> {
