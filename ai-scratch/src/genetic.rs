@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use poulet_ai_common::encode_board;
-use poulet_chess::Game;
+use poulet_chess::{Board, Game};
 use rand_distr::Distribution;
 use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 
@@ -42,6 +42,7 @@ impl Match {
         let players = self.player_indices.map(|i| players.get(i).unwrap());
 
         let mut game = Game::default();
+        let mut flipped_board = Board::new();
 
         let mut current = 0;
         let mut next;
@@ -51,13 +52,26 @@ impl Match {
         loop {
             next = (current + 1) % 2;
 
-            let neurons = encode_board(&game.board);
-            let logits = block_on(async { players[current].forward(&neurons).await }).unwrap();
-            let res = match predict_move(&mut game, logits, 1.0) {
-                Ok(res) => res,
-                Err(_) => break,
+            let (src_file, src_rank, dst_file, dst_rank) = if current == 1 {
+                game.board.flip(&mut flipped_board);
+                let neurons = encode_board(&flipped_board);
+                let logits = block_on(async { players[current].forward(&neurons).await }).unwrap();
+                let (_, src_file, src_rank, dst_file, dst_rank) =
+                    match predict_move(&mut game, true, logits, 1.0) {
+                        Ok(res) => res,
+                        Err(_) => break,
+                    };
+                (src_file, src_rank, dst_file, dst_rank)
+            } else {
+                let neurons = encode_board(&game.board);
+                let logits = block_on(async { players[current].forward(&neurons).await }).unwrap();
+                let (_, src_file, src_rank, dst_file, dst_rank) =
+                    match predict_move(&mut game, false, logits, 1.0) {
+                        Ok(res) => res,
+                        Err(_) => break,
+                    };
+                (src_file, src_rank, dst_file, dst_rank)
             };
-            let (_, src_file, src_rank, dst_file, dst_rank) = res;
 
             if !game.safe_move(src_file, src_rank, dst_file, dst_rank) {
                 break;

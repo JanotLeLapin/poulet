@@ -354,13 +354,23 @@ impl Player {
     }
 }
 
+pub fn decode_move_unflipped(i: usize, unflip: bool) -> (u8, u8, u8, u8) {
+    if unflip {
+        let (src_file, src_rank, dst_file, dst_rank) = decode_move(i);
+        (src_file, 7 - src_rank, dst_file, 7 - dst_rank)
+    } else {
+        decode_move(i)
+    }
+}
+
 pub fn predict_move(
     game: &mut Game,
+    unflip: bool,
     mut logits: Vec<f32>,
     temperature: f32,
 ) -> Result<(f32, u8, u8, u8, u8), rand::distr::weighted::Error> {
     for i in 0..4096 {
-        let (src_file, src_rank, dst_file, dst_rank) = decode_move(i);
+        let (src_file, src_rank, dst_file, dst_rank) = decode_move_unflipped(i, unflip);
         if !game
             .board
             .get_square(src_file, src_rank)
@@ -387,7 +397,7 @@ pub fn predict_move(
     let distr = rand::distr::weighted::WeightedIndex::new(&logits)?;
     let i = distr.sample(&mut rng);
 
-    let (src_file, src_rank, dst_file, dst_rank) = decode_move(i);
+    let (src_file, src_rank, dst_file, dst_rank) = decode_move_unflipped(i, unflip);
 
     Ok((logits[i], src_file, src_rank, dst_file, dst_rank))
 }
