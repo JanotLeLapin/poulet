@@ -1,5 +1,5 @@
 use poulet_ai_scratch::{
-    genetic::Generation,
+    genetic::{Generation, Match},
     model::{Player, State},
 };
 
@@ -9,20 +9,25 @@ fn cli() -> Command {
     Command::new("poulet")
         .about("A toy generic algorithm that learns to play chess")
         .subcommand_required(true)
-        .subcommands([Command::new("train")
-            .arg(
-                arg!(<GEN> "Generation where the algorithm left off")
-                    .required(true)
-                    .value_parser(value_parser!(usize)),
-            )
-            .arg(
-                arg!(--interval [INTERVAL] "Generation save interval")
-                    .value_parser(value_parser!(usize)),
-            )
-            .arg(
-                arg!(--elite [ELITE] "Number of elite individuals for each generation")
-                    .value_parser(value_parser!(usize)),
-            )])
+        .subcommands([
+            Command::new("train")
+                .arg(
+                    arg!(<GEN> "Generation where the algorithm left off")
+                        .required(true)
+                        .value_parser(value_parser!(usize)),
+                )
+                .arg(
+                    arg!(--interval [INTERVAL] "Generation save interval")
+                        .value_parser(value_parser!(usize)),
+                )
+                .arg(
+                    arg!(--elite [ELITE] "Number of elite individuals for each generation")
+                        .value_parser(value_parser!(usize)),
+                ),
+            Command::new("test")
+                .arg(arg!(<PLAYER> "Path to player model"))
+                .arg(arg!(--games [GAMES] "Game count").value_parser(value_parser!(usize))),
+        ])
 }
 
 #[tokio::main]
@@ -66,6 +71,34 @@ async fn main() -> anyhow::Result<()> {
                     });
                 }
             }
+        }
+        Some(("test", sub)) => {
+            let player_path: &String = sub.get_one("PLAYER").unwrap();
+            let game_count: usize = *sub.get_one("GAMES").unwrap_or(&16);
+
+            let mut players = Vec::with_capacity(2);
+            players.push(Player::load(&state, player_path)?);
+            players.push(Player::init(&state)?);
+
+            let mut scores = vec![0.0, 0.0];
+
+            for i in 0..game_count {
+                let a = i % 2;
+                let b = (i + 1) % 2;
+                let mut m = Match::new(a, b);
+                println!("starting game {i} {a} {b}");
+                m.match_loop(&players);
+
+                scores[a] += (m.white_score / 20.0) + 0.5;
+                scores[b] += (m.black_score / 20.0) + 0.5;
+            }
+
+            println!("Your score: {}", scores[0]);
+            println!("Random score: {}", scores[1]);
+            println!(
+                "Win rate: {}%",
+                (scores[0] as f32) / ((scores[0] + scores[1]) as f32) * 100.0
+            );
         }
         _ => {
             cli().print_help()?;
