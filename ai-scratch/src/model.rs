@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use bytemuck::{Pod, Zeroable};
 use poulet_ai_common::decode_move;
 use poulet_chess::Game;
 use rand_distr::Distribution;
@@ -10,6 +11,16 @@ use wgpu::{
     BufferDescriptor,
     util::{BufferInitDescriptor, DeviceExt},
 };
+
+pub const BATCH_SIZE: usize = 32;
+
+#[repr(C)]
+#[derive(Clone, Copy, Pod, Zeroable)]
+pub struct Params {
+    input_size: u32,
+    output_size: u32,
+    _pad: [u32; 2],
+}
 
 pub struct State {
     pub instance: Arc<wgpu::Instance>,
@@ -32,12 +43,14 @@ pub struct DenseLayer {
     device: Arc<wgpu::Device>,
     queue: Arc<wgpu::Queue>,
     pipeline: Arc<wgpu::ComputePipeline>,
+    params_buffer: wgpu::Buffer,
     weights_buffer: wgpu::Buffer,
     biases_buffer: wgpu::Buffer,
     input_buffer: wgpu::Buffer,
     output_buffer: wgpu::Buffer,
     temp_buffer: wgpu::Buffer,
     bind_group: wgpu::BindGroup,
+    input_size: usize,
     output_size: usize,
 }
 
@@ -113,6 +126,16 @@ impl DenseLayer {
         pipeline: Arc<wgpu::ComputePipeline>,
         params: &DenseLayerParams,
     ) -> Self {
+        let params_buffer = device.create_buffer_init(&BufferInitDescriptor {
+            label: Some("params"),
+            contents: bytemuck::bytes_of(&Params {
+                input_size: params.input_size as u32,
+                output_size: params.output_size as u32,
+                _pad: [0; 2],
+            }),
+            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+        });
+
         let biases_buffer = device.create_buffer_init(&BufferInitDescriptor {
             label: Some("biases"),
             contents: bytemuck::cast_slice(&params.biases),
@@ -127,21 +150,21 @@ impl DenseLayer {
 
         let input_buffer = device.create_buffer(&BufferDescriptor {
             label: Some("input"),
-            size: (params.input_size * std::mem::size_of::<f32>()) as u64,
+            size: (BATCH_SIZE * params.input_size * std::mem::size_of::<f32>()) as u64,
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         });
 
         let temp_buffer = device.create_buffer(&BufferDescriptor {
             label: Some("temp"),
-            size: params.output_size as u64 * std::mem::size_of::<f32>() as u64,
+            size: (BATCH_SIZE * params.output_size * std::mem::size_of::<f32>()) as u64,
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
 
         let output_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("output"),
-            size: params.output_size as u64 * std::mem::size_of::<f32>() as u64,
+            size: (BATCH_SIZE * params.output_size * std::mem::size_of::<f32>()) as u64,
             usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         });
@@ -152,7 +175,7 @@ impl DenseLayer {
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
-                    resource: input_buffer.as_entire_binding(),
+                    resource: params_buffer.as_entire_binding(),
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
@@ -164,6 +187,10 @@ impl DenseLayer {
                 },
                 wgpu::BindGroupEntry {
                     binding: 3,
+                    resource: input_buffer.as_entire_binding(),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 4,
                     resource: output_buffer.as_entire_binding(),
                 },
             ],
@@ -173,29 +200,37 @@ impl DenseLayer {
             device,
             queue,
             pipeline,
+            params_buffer,
             weights_buffer,
             biases_buffer,
             input_buffer,
             output_buffer,
             temp_buffer,
             bind_group,
+            input_size: params.input_size,
             output_size: params.output_size,
         }
     }
 
-    pub async fn forward(&self, input: &[f32]) -> anyhow::Result<Vec<f32>> {
+    pub async fn forward(&self, input: &[Vec<f32>]) -> anyhow::Result<Vec<Vec<f32>>> {
         let mut encoder = self.device.create_command_encoder(&Default::default());
 
+        let mut input_data = Vec::with_capacity(input.len() * self.input_size as usize);
+        for vec in input {
+            input_data.extend_from_slice(&vec);
+        }
+
         self.queue
-            .write_buffer(&self.input_buffer, 0, bytemuck::cast_slice(&input));
+            .write_buffer(&self.input_buffer, 0, bytemuck::cast_slice(&input_data));
 
         {
             let num_dispatches = self.output_size.div_ceil(64) as u32;
+            let batch_size = input.len() as u32;
 
             let mut pass = encoder.begin_compute_pass(&Default::default());
             pass.set_pipeline(&self.pipeline);
             pass.set_bind_group(0, &self.bind_group, &[]);
-            pass.dispatch_workgroups(num_dispatches, 1, 1);
+            pass.dispatch_workgroups(num_dispatches, batch_size, 1);
         }
 
         encoder.copy_buffer_to_buffer(
@@ -222,7 +257,11 @@ impl DenseLayer {
 
             let output_data = self.temp_buffer.get_mapped_range(..);
 
-            bytemuck::cast_slice(&output_data).to_vec()
+            let slice: &[f32] = bytemuck::cast_slice(&output_data);
+            slice
+                .chunks(self.output_size)
+                .map(|chunk| chunk.to_vec())
+                .collect()
         };
 
         self.temp_buffer.unmap();
@@ -346,7 +385,7 @@ impl Player {
         Self::new(state, a, b, out)
     }
 
-    pub async fn forward(&self, input: &[f32]) -> anyhow::Result<Vec<f32>> {
+    pub async fn forward(&self, input: &[Vec<f32>]) -> anyhow::Result<Vec<Vec<f32>>> {
         let out = self.hidden_layer_a.forward(input).await?;
         let out = self.hidden_layer_b.forward(&out).await?;
         let out = self.output_layer.forward(&out).await?;

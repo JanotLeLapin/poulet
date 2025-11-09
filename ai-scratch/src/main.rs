@@ -1,5 +1,5 @@
 use poulet_ai_scratch::{
-    genetic::{Generation, Match},
+    genetic::Generation,
     model::{Player, State},
 };
 
@@ -45,8 +45,9 @@ async fn main() -> anyhow::Result<()> {
             let mut elite;
 
             if g == 0 {
-                generation = Generation::init(&state);
-                generation.play();
+                generation = Generation::init(&state, 32);
+                generation.generate_matches(16);
+                generation.play().await;
                 elite = generation.get_elite(elite_size);
             } else {
                 elite = (0..elite_size)
@@ -59,8 +60,9 @@ async fn main() -> anyhow::Result<()> {
 
             loop {
                 println!("--- GENERATION {g} ---");
-                let mut generation = Generation::populate(&state, elite);
-                generation.play();
+                generation = Generation::populate(&state, elite, 32);
+                generation.generate_matches(16);
+                generation.play().await;
                 elite = generation.get_elite(elite_size);
                 g += 1;
 
@@ -73,32 +75,32 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         Some(("test", sub)) => {
-            let player_path: &String = sub.get_one("PLAYER").unwrap();
-            let game_count: usize = *sub.get_one("GAMES").unwrap_or(&16);
+            // let player_path: &String = sub.get_one("PLAYER").unwrap();
+            // let game_count: usize = *sub.get_one("GAMES").unwrap_or(&16);
 
-            let mut players = Vec::with_capacity(2);
-            players.push(Player::load(&state, player_path)?);
-            players.push(Player::init(&state)?);
+            // let mut players = Vec::with_capacity(2);
+            // players.push(Player::load(&state, player_path)?);
+            // players.push(Player::init(&state)?);
 
-            let mut scores = vec![0.0, 0.0];
+            // let mut scores = vec![0.0, 0.0];
 
-            for i in 0..game_count {
-                let a = i % 2;
-                let b = (i + 1) % 2;
-                let mut m = Match::new(a, b);
-                println!("starting game {i} {a} {b}");
-                m.match_loop(&players);
+            // for i in 0..game_count {
+            //     let a = i % 2;
+            //     let b = (i + 1) % 2;
+            //     let mut m = Match::new(a, b);
+            //     println!("starting game {i} {a} {b}");
+            //     m.match_loop(&players);
 
-                scores[a] += (m.white_score / 20.0) + 0.5;
-                scores[b] += (m.black_score / 20.0) + 0.5;
-            }
+            //     scores[a] += (m.white_score / 20.0) + 0.5;
+            //     scores[b] += (m.black_score / 20.0) + 0.5;
+            // }
 
-            println!("Your score: {}", scores[0]);
-            println!("Random score: {}", scores[1]);
-            println!(
-                "Win rate: {}%",
-                (scores[0] as f32) / ((scores[0] + scores[1]) as f32) * 100.0
-            );
+            // println!("Your score: {}", scores[0]);
+            // println!("Random score: {}", scores[1]);
+            // println!(
+            //     "Win rate: {}%",
+            //     (scores[0] as f32) / ((scores[0] + scores[1]) as f32) * 100.0
+            // );
         }
         _ => {
             cli().print_help()?;

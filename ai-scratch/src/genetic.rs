@@ -3,165 +3,58 @@ use std::collections::HashSet;
 use poulet_ai_common::encode_board;
 use poulet_chess::{Board, Game};
 use rand_distr::Distribution;
-use rayon::iter::{IntoParallelRefMutIterator, ParallelIterator};
 
-use crate::model::{Player, State, predict_move};
-
-use futures::executor::block_on;
-
-pub const GAME_PER_PLAYER: usize = 8;
-pub const POOL_COUNT: usize = 2;
-
-pub const PLAYER_PER_GEN: usize = POOL_COUNT * (GAME_PER_PLAYER + 1);
+use crate::model::{BATCH_SIZE, Player, State, predict_move};
 
 pub struct Match {
-    pub player_indices: [usize; 2],
-    pub white_score: f32,
-    pub black_score: f32,
-}
-
-pub struct Pool {
-    pub matches: Vec<Match>,
+    player_indices: [usize; 2],
+    scores: [f32; 2],
+    game: Game,
 }
 
 pub struct Generation {
-    pub players: Vec<Player>,
-    pub pools: Vec<Pool>,
+    matches: Vec<Match>,
+    players: Vec<Player>,
+    player_map: std::collections::HashMap<usize, std::collections::HashSet<usize>>,
 }
 
 impl Match {
     pub fn new(white: usize, black: usize) -> Self {
         Self {
             player_indices: [white, black],
-            white_score: 0.0,
-            black_score: 0.0,
-        }
-    }
-
-    pub fn match_loop(&mut self, players: &Vec<Player>) {
-        let players = self.player_indices.map(|i| players.get(i).unwrap());
-
-        let mut game = Game::default();
-        let mut flipped_board = Board::new();
-
-        let mut current = 0;
-        let mut next;
-        let mut is_checkmate = false;
-        let mut scores: [Vec<f32>; 2] = [vec![], vec![]];
-
-        loop {
-            next = (current + 1) % 2;
-
-            let (src_file, src_rank, dst_file, dst_rank) = if current == 1 {
-                game.board.flip(&mut flipped_board);
-                let neurons = encode_board(&flipped_board);
-                let logits = block_on(async { players[current].forward(&neurons).await }).unwrap();
-                let (_, src_file, src_rank, dst_file, dst_rank) =
-                    match predict_move(&mut game, true, logits, 1.0) {
-                        Ok(res) => res,
-                        Err(_) => break,
-                    };
-                (src_file, src_rank, dst_file, dst_rank)
-            } else {
-                let neurons = encode_board(&game.board);
-                let logits = block_on(async { players[current].forward(&neurons).await }).unwrap();
-                let (_, src_file, src_rank, dst_file, dst_rank) =
-                    match predict_move(&mut game, false, logits, 1.0) {
-                        Ok(res) => res,
-                        Err(_) => break,
-                    };
-                (src_file, src_rank, dst_file, dst_rank)
-            };
-
-            if !game.safe_move(src_file, src_rank, dst_file, dst_rank) {
-                break;
-            }
-
-            scores[current].push(0.0); // TODO: evaluated score here
-            game.do_move(src_file, src_rank, dst_file, dst_rank);
-
-            if game.is_checkmate(next.try_into().unwrap()) {
-                is_checkmate = true;
-                break;
-            }
-
-            if game.until_stalemate >= 60 {
-                break;
-            }
-
-            current = next;
-        }
-
-        let mut scores: [f32; 2] = scores.map(|vec| {
-            let len = vec.len() as f32;
-            vec.into_iter().map(|v| v / len).sum()
-        });
-
-        if is_checkmate {
-            scores[current] += 10.0;
-            scores[next] -= 10.0;
-        }
-
-        println!("{:?} done, scores: {:?}", self.player_indices, scores);
-
-        if is_checkmate {
-            println!("fen: {:?}", game.board.fen());
-        }
-
-        self.white_score = scores[0];
-        self.black_score = scores[1];
-    }
-}
-
-impl Pool {
-    pub fn init(player_indices: &[usize]) -> Self {
-        let indice_couples: Vec<(usize, usize)> = (0..9)
-            .flat_map(|i| (0..9).map(move |j| (i, j)))
-            .filter(|(i, j)| i != j)
-            .collect();
-
-        let matches = indice_couples
-            .iter()
-            .map(|(a, b)| Match::new(player_indices[*a], player_indices[*b]))
-            .collect();
-
-        Self { matches }
-    }
-
-    pub fn play(&mut self, players: &Vec<Player>) {
-        for m in self.matches.iter_mut() {
-            m.match_loop(players);
+            scores: [0.0; 2],
+            game: Game::default(),
         }
     }
 }
 
 impl Generation {
-    pub fn new(player_indices: Vec<usize>, players: Vec<Player>) -> Self {
-        let pools = (0..POOL_COUNT)
-            .map(|i| {
-                Pool::init(
-                    &player_indices[(i * (GAME_PER_PLAYER + 1))..((i + 1) * (GAME_PER_PLAYER + 1))],
-                )
-            })
-            .collect();
-
-        Self { players, pools }
-    }
-
-    pub fn init(state: &State) -> Self {
-        let (player_indices, players) = (0..PLAYER_PER_GEN)
-            .map(|_| Player::init(state).unwrap())
+    pub fn new(players: Vec<Player>) -> Self {
+        let player_map = players
+            .iter()
             .enumerate()
-            .unzip();
-
-        Self::new(player_indices, players)
+            .map(|(i, _)| (i, std::collections::HashSet::new()))
+            .collect();
+        Self {
+            matches: Vec::new(),
+            players,
+            player_map,
+        }
     }
 
-    pub fn populate(state: &State, elite: Vec<Player>) -> Self {
+    pub fn init(state: &State, pop_size: usize) -> Self {
+        Self::new(
+            (0..pop_size)
+                .map(|_| Player::init(state).unwrap())
+                .collect(),
+        )
+    }
+
+    pub fn populate(state: &State, elite: Vec<Player>, pop_size: usize) -> Self {
         let mut rng = rand::rng();
         let distr = rand::distr::Uniform::new(0, elite.len()).unwrap();
 
-        let (player_indices, players) = (0..PLAYER_PER_GEN)
+        let players = (0..pop_size)
             .map(|_| {
                 elite
                     .get(distr.sample(&mut rng))
@@ -173,26 +66,140 @@ impl Generation {
                         0.1,
                     )
             })
-            .enumerate()
-            .unzip();
+            .collect();
 
-        Self::new(player_indices, players)
+        Self::new(players)
     }
 
-    pub fn play(&mut self) {
-        self.pools
-            .par_iter_mut()
-            .for_each(|p| p.play(&self.players));
+    pub fn generate_matches(&mut self, match_per_player: usize) {
+        let mut rng = rand::rng();
+        let distr = rand::distr::Uniform::new(0, self.players.len()).unwrap();
+
+        for i in 0..self.players.len() {
+            for _ in 0..match_per_player.div_ceil(2) {
+                let (a, b) = loop {
+                    let a = distr.sample(&mut rng);
+                    let b = distr.sample(&mut rng);
+
+                    if a != b && a != i && b != i {
+                        break (a, b);
+                    }
+                };
+                self.player_map
+                    .get_mut(&i)
+                    .unwrap()
+                    .insert(self.matches.len());
+                self.player_map
+                    .get_mut(&i)
+                    .unwrap()
+                    .insert(self.matches.len() + 1);
+                self.player_map
+                    .get_mut(&a)
+                    .unwrap()
+                    .insert(self.matches.len());
+                self.player_map
+                    .get_mut(&b)
+                    .unwrap()
+                    .insert(self.matches.len() + 1);
+                self.matches.extend([Match::new(a, i), Match::new(i, b)]);
+            }
+        }
+    }
+
+    pub async fn play(&mut self) {
+        loop {
+            let mut should_break = true;
+            for (i, p) in self.players.iter().enumerate() {
+                let match_indices = self.player_map.get_mut(&i).unwrap();
+                let (match_indices, boards): (Vec<_>, Vec<_>) = match_indices
+                    .iter()
+                    .filter_map(|j| {
+                        let m = self.matches.get(*j).unwrap();
+                        let is_white = m.player_indices[0] == i;
+                        let is_turn_white = m.game.turn == poulet_chess::Color::White;
+                        if is_white == is_turn_white {
+                            let mut board;
+                            if is_white {
+                                board = m.game.board.clone();
+                            } else {
+                                board = Board::new();
+                                m.game.board.flip(&mut board);
+                            }
+
+                            Some((j, encode_board(&board)))
+                        } else {
+                            None
+                        }
+                    })
+                    .take(BATCH_SIZE)
+                    .unzip();
+
+                if match_indices.len() == 0 {
+                    continue;
+                }
+
+                should_break = false;
+                let output = p.forward(&boards).await.unwrap();
+
+                let mut rem = vec![];
+
+                for (l, mi) in output.into_iter().zip(match_indices) {
+                    let m: &mut Match = self.matches.get_mut(mi).unwrap();
+                    let (should_unflip, next) = match m.game.turn {
+                        poulet_chess::Color::White => (false, poulet_chess::Color::Black),
+                        poulet_chess::Color::Black => (true, poulet_chess::Color::White),
+                    };
+                    let (_, src_file, src_rank, dst_file, dst_rank) =
+                        match predict_move(&mut m.game, should_unflip, l, 1.0) {
+                            Ok(prediction) => prediction,
+                            Err(_) => {
+                                rem.push(mi);
+                                continue;
+                            }
+                        };
+
+                    if !m.game.safe_move(src_file, src_rank, dst_file, dst_rank) {
+                        rem.push(mi);
+                        continue;
+                    }
+
+                    m.game.do_move(src_file, src_rank, dst_file, dst_rank);
+
+                    if m.game.is_checkmate(next) {
+                        m.scores[usize::from(m.game.turn)] = 10.0;
+                        m.scores[usize::from(next)] = -10.0;
+                        rem.push(mi);
+                        println!("checkmate! {}", m.game.board.fen());
+                        continue;
+                    }
+
+                    if m.game.until_stalemate >= 60 {
+                        rem.push(mi);
+                        continue;
+                    }
+                }
+
+                for mi in rem {
+                    println!("removing match {mi}");
+                    let m: &Match = self.matches.get(mi).unwrap();
+                    for i in m.player_indices {
+                        self.player_map.get_mut(&i).unwrap().remove(&mi);
+                    }
+                }
+            }
+
+            if should_break {
+                break;
+            }
+        }
     }
 
     pub fn get_elite(self, count: usize) -> Vec<Player> {
-        let mut scores: Vec<f32> = (0..PLAYER_PER_GEN).map(|_| 0.0).collect();
-        for p in self.pools.iter() {
-            for m in p.matches.iter() {
-                let [w, b] = m.player_indices;
-                scores[w] += m.white_score;
-                scores[b] += m.black_score;
-            }
+        let mut scores: Vec<f32> = (0..self.players.len()).map(|_| 0.0).collect();
+        for m in self.matches.iter() {
+            let [w, b] = m.player_indices;
+            scores[w] += m.scores[0];
+            scores[b] += m.scores[1];
         }
 
         let mut enumerated: Vec<(usize, f32)> = scores.into_iter().enumerate().collect();
