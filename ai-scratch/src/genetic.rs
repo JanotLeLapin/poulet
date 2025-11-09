@@ -117,7 +117,7 @@ impl Pool {
     pub fn init(player_indices: &[usize]) -> Self {
         let indice_couples: Vec<(usize, usize)> = (0..9)
             .flat_map(|i| (0..9).map(move |j| (i, j)))
-            .filter(|(i, j)| i < j)
+            .filter(|(i, j)| i != j)
             .collect();
 
         let matches = indice_couples
