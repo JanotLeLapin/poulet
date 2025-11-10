@@ -192,7 +192,7 @@ impl Generation {
                             };
                             return (mi, MatchUpdate::Finished(score_update));
                         } else {
-                            println!("{mi}: draw");
+                            println!("{mi}: stalemate");
                             return (mi, MatchUpdate::Finished([0.0; 2]));
                         }
                     }
@@ -202,6 +202,7 @@ impl Generation {
                     tmp_game.do_move(src_file, src_rank, dst_file, dst_rank);
 
                     if tmp_game.until_stalemate >= 60 {
+                        println!("{mi}: draw");
                         return (mi, MatchUpdate::Finished([0.0; 2]));
                     }
 
