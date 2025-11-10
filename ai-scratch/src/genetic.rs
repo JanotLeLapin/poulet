@@ -1,7 +1,4 @@
-use std::{
-    collections::HashSet,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::collections::HashSet;
 
 use poulet_ai_common::encode_board;
 use poulet_chess::{Board, Game};
@@ -158,8 +155,6 @@ impl Generation {
                 })
                 .collect();
 
-            let start = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-            println!("awaiting");
             let results: Vec<_> = futures::future::join_all(player_futures)
                 .await
                 .into_iter()
@@ -170,12 +165,6 @@ impl Generation {
             if results.is_empty() {
                 break;
             }
-            let end = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-            println!(
-                "took {:?} for {}",
-                end - start,
-                results.iter().map(|(v, _)| v.iter().count()).sum::<usize>()
-            );
 
             let new_states: Vec<_> = results
                 .par_iter()
