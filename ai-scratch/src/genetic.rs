@@ -186,24 +186,25 @@ impl Generation {
                         poulet_chess::Color::White => (false, poulet_chess::Color::Black),
                         poulet_chess::Color::Black => (true, poulet_chess::Color::White),
                     };
-                    let (_, src_file, src_rank, dst_file, dst_rank) =
-                        match predict_move(&mut tmp_game, should_unflip, l.clone(), 1.0) {
-                            Ok(prediction) => prediction,
-                            Err(_) => {
-                                return (mi, MatchUpdate::Finished([0.0; 2]));
-                            }
-                        };
-
-                    if !tmp_game.safe_move(src_file, src_rank, dst_file, dst_rank) {
-                        return (mi, MatchUpdate::Finished([0.0; 2]));
+                    let prediction = predict_move(&mut tmp_game, should_unflip, l.clone(), 1.0);
+                    if prediction
+                        .map(|(_, src_file, src_rank, dst_file, dst_rank)| {
+                            !tmp_game.safe_move(src_file, src_rank, dst_file, dst_rank)
+                        })
+                        .unwrap_or(true)
+                    {
+                        if tmp_game.is_checkmate(m.game.turn) {
+                            println!("{mi}: checkmate! {}", tmp_game.board.fen());
+                            return (mi, MatchUpdate::Finished([0.0; 2]));
+                        } else {
+                            println!("{mi}: draw");
+                            return (mi, MatchUpdate::Finished([0.0; 2]));
+                        }
                     }
+
+                    let (_, src_file, src_rank, dst_file, dst_rank) = prediction.unwrap();
 
                     tmp_game.do_move(src_file, src_rank, dst_file, dst_rank);
-
-                    if tmp_game.is_checkmate(next) {
-                        println!("{mi}: checkmate! {}", tmp_game.board.fen());
-                        return (mi, MatchUpdate::Finished([0.0; 2]));
-                    }
 
                     if tmp_game.until_stalemate >= 60 {
                         return (mi, MatchUpdate::Finished([0.0; 2]));
