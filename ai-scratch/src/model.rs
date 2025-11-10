@@ -54,6 +54,9 @@ pub struct DenseLayer {
 }
 
 pub struct Player {
+    device: Arc<wgpu::Device>,
+    queue: Arc<wgpu::Queue>,
+
     hidden_layer_a_params: DenseLayerParams,
     hidden_layer_b_params: DenseLayerParams,
     output_layer_params: DenseLayerParams,
@@ -222,61 +225,6 @@ impl DenseLayer {
             output_size: params.output_size,
         }
     }
-
-    pub async fn forward(&self, input: &[Vec<f32>]) -> anyhow::Result<Vec<Vec<f32>>> {
-        let mut encoder = self.device.create_command_encoder(&Default::default());
-
-        let mut input_data = Vec::with_capacity(input.len() * self.input_size as usize);
-        for vec in input {
-            input_data.extend_from_slice(&vec);
-        }
-
-        self.queue
-            .write_buffer(&self.input_buffer, 0, bytemuck::cast_slice(&input_data));
-
-        {
-            let num_dispatches = self.output_size.div_ceil(64) as u32;
-            let batch_size = input.len() as u32;
-
-            let mut pass = encoder.begin_compute_pass(&Default::default());
-            pass.set_pipeline(&self.pipeline);
-            pass.set_bind_group(0, &self.bind_group, &[]);
-            pass.dispatch_workgroups(num_dispatches, batch_size, 1);
-        }
-
-        encoder.copy_buffer_to_buffer(
-            &self.output_buffer,
-            0,
-            &self.temp_buffer,
-            0,
-            self.output_buffer.size(),
-        );
-
-        self.queue.submit([encoder.finish()]);
-
-        let res = {
-            let (tx, rx) = tokio::sync::oneshot::channel();
-
-            self.temp_buffer
-                .map_async(wgpu::MapMode::Read, .., move |result| {
-                    tx.send(result).unwrap()
-                });
-
-            rx.await??;
-
-            let output_data = self.temp_buffer.get_mapped_range(..);
-
-            let slice: &[f32] = bytemuck::cast_slice(&output_data);
-            slice
-                .chunks(self.output_size)
-                .map(|chunk| chunk.to_vec())
-                .collect()
-        };
-
-        self.temp_buffer.unmap();
-
-        Ok(res)
-    }
 }
 
 impl Player {
@@ -308,6 +256,8 @@ impl Player {
         );
 
         Self {
+            device: state.device.clone(),
+            queue: state.queue.clone(),
             hidden_layer_a_params,
             hidden_layer_b_params,
             output_layer_params,
@@ -395,10 +345,99 @@ impl Player {
     }
 
     pub async fn forward(&self, input: &[Vec<f32>]) -> anyhow::Result<Vec<Vec<f32>>> {
-        let out = self.hidden_layer_a.forward(input).await?;
-        let out = self.hidden_layer_b.forward(&out).await?;
-        let out = self.output_layer.forward(&out).await?;
-        Ok(out)
+        let mut encoder = self.device.create_command_encoder(&Default::default());
+
+        let mut input_data =
+            Vec::with_capacity(input.len() * self.hidden_layer_a.input_size as usize);
+        for vec in input {
+            input_data.extend_from_slice(&vec);
+        }
+
+        self.queue.write_buffer(
+            &self.hidden_layer_a.input_buffer,
+            0,
+            bytemuck::cast_slice(&input_data),
+        );
+
+        {
+            let num_dispatches = self.hidden_layer_a.output_size.div_ceil(64) as u32;
+            let batch_size = input.len() as u32;
+
+            let mut pass = encoder.begin_compute_pass(&Default::default());
+            pass.set_pipeline(&self.hidden_layer_a.pipeline);
+            pass.set_bind_group(0, &self.hidden_layer_a.bind_group, &[]);
+            pass.dispatch_workgroups(num_dispatches, batch_size, 1);
+        }
+
+        encoder.copy_buffer_to_buffer(
+            &self.hidden_layer_a.output_buffer,
+            0,
+            &self.hidden_layer_b.input_buffer,
+            0,
+            self.hidden_layer_a.output_buffer.size(),
+        );
+
+        {
+            let num_dispatches = self.hidden_layer_b.output_size.div_ceil(64) as u32;
+            let batch_size = input.len() as u32;
+
+            let mut pass = encoder.begin_compute_pass(&Default::default());
+            pass.set_pipeline(&self.hidden_layer_b.pipeline);
+            pass.set_bind_group(0, &self.hidden_layer_b.bind_group, &[]);
+            pass.dispatch_workgroups(num_dispatches, batch_size, 1);
+        }
+
+        encoder.copy_buffer_to_buffer(
+            &self.hidden_layer_b.output_buffer,
+            0,
+            &self.output_layer.input_buffer,
+            0,
+            self.hidden_layer_b.output_buffer.size(),
+        );
+
+        {
+            let num_dispatches = self.output_layer.output_size.div_ceil(64) as u32;
+            let batch_size = input.len() as u32;
+
+            let mut pass = encoder.begin_compute_pass(&Default::default());
+            pass.set_pipeline(&self.output_layer.pipeline);
+            pass.set_bind_group(0, &self.output_layer.bind_group, &[]);
+            pass.dispatch_workgroups(num_dispatches, batch_size, 1);
+        }
+
+        encoder.copy_buffer_to_buffer(
+            &self.output_layer.output_buffer,
+            0,
+            &self.output_layer.temp_buffer,
+            0,
+            self.output_layer.output_buffer.size(),
+        );
+
+        self.queue.submit([encoder.finish()]);
+
+        let res = {
+            let (tx, rx) = tokio::sync::oneshot::channel();
+
+            self.output_layer
+                .temp_buffer
+                .map_async(wgpu::MapMode::Read, .., move |result| {
+                    tx.send(result).unwrap()
+                });
+
+            rx.await??;
+
+            let output_data = self.output_layer.temp_buffer.get_mapped_range(..);
+
+            let slice: &[f32] = bytemuck::cast_slice(&output_data);
+            slice
+                .chunks(self.output_layer.output_size)
+                .map(|chunk| chunk.to_vec())
+                .collect()
+        };
+
+        self.output_layer.temp_buffer.unmap();
+
+        Ok(res)
     }
 }
 
