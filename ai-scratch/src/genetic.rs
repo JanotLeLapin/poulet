@@ -83,7 +83,7 @@ impl Generation {
                 elite
                     .get(a)
                     .unwrap()
-                    .crossover_and_mutate(state, elite.get(b).unwrap(), 0.5, 0.1);
+                    .crossover_and_mutate(state, elite.get(b).unwrap(), 0.5, 0.04);
 
             players.push(player);
         }
