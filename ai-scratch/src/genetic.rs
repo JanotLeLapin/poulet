@@ -77,6 +77,24 @@ impl Generation {
         Self::new(players)
     }
 
+    pub fn create_match(&mut self, white: usize, black: usize) {
+        if white == black
+            || self.player_map.get(&white).is_none()
+            || self.player_map.get(&black).is_none()
+        {
+            return;
+        }
+
+        let w = self.player_map.get_mut(&white).unwrap();
+        w.insert(self.matches.len());
+
+        let b = self.player_map.get_mut(&black).unwrap();
+        b.insert(self.matches.len());
+
+        let m = Match::new(white, black);
+        self.matches.push(m);
+    }
+
     pub fn generate_matches(&mut self, match_per_player: usize) {
         let mut rng = rand::rng();
         let distr = rand::distr::Uniform::new(0, self.players.len()).unwrap();
@@ -91,23 +109,9 @@ impl Generation {
                         break (a, b);
                     }
                 };
-                self.player_map
-                    .get_mut(&i)
-                    .unwrap()
-                    .insert(self.matches.len());
-                self.player_map
-                    .get_mut(&i)
-                    .unwrap()
-                    .insert(self.matches.len() + 1);
-                self.player_map
-                    .get_mut(&a)
-                    .unwrap()
-                    .insert(self.matches.len());
-                self.player_map
-                    .get_mut(&b)
-                    .unwrap()
-                    .insert(self.matches.len() + 1);
-                self.matches.extend([Match::new(a, i), Match::new(i, b)]);
+
+                self.create_match(a, i);
+                self.create_match(i, b);
             }
         }
     }
