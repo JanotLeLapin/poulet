@@ -5,7 +5,6 @@ use poulet_ai_common::decode_move;
 use poulet_chess::Game;
 use rand_distr::Distribution;
 
-use flume::bounded;
 use serde::{Deserialize, Serialize};
 use wgpu::{
     BufferDescriptor,
@@ -84,10 +83,22 @@ impl State {
             cache: Default::default(),
         });
 
+        let device = Arc::new(device);
+
+        tokio::spawn({
+            let device = device.clone();
+            async move {
+                loop {
+                    let _ = device.poll(wgpu::PollType::Poll);
+                    tokio::time::sleep(std::time::Duration::from_millis(1)).await;
+                }
+            }
+        });
+
         Self {
             instance: Arc::new(instance),
             adapter: Arc::new(adapter),
-            device: Arc::new(device),
+            device,
             queue: Arc::new(queue),
             shader: Arc::new(shader),
             pipeline: Arc::new(pipeline),
@@ -244,16 +255,14 @@ impl DenseLayer {
         self.queue.submit([encoder.finish()]);
 
         let res = {
-            let (tx, rx) = bounded(1);
+            let (tx, rx) = tokio::sync::oneshot::channel();
 
             self.temp_buffer
                 .map_async(wgpu::MapMode::Read, .., move |result| {
                     tx.send(result).unwrap()
                 });
 
-            self.device.poll(wgpu::PollType::wait_indefinitely())?;
-
-            rx.recv_async().await??;
+            rx.await??;
 
             let output_data = self.temp_buffer.get_mapped_range(..);
 

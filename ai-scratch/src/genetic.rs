@@ -108,13 +108,15 @@ impl Generation {
 
     pub async fn play(&mut self) {
         loop {
-            let mut should_break = true;
-            for (i, p) in self.players.iter().enumerate() {
-                let match_indices = self.player_map.get_mut(&i).unwrap();
+            let player_map = &self.player_map;
+            let matches = &self.matches;
+
+            let player_futures = self.players.iter().enumerate().map(|(i, p)| async move {
+                let match_indices = player_map.get(&i).unwrap();
                 let (match_indices, boards): (Vec<_>, Vec<_>) = match_indices
                     .iter()
                     .filter_map(|j| {
-                        let m = self.matches.get(*j).unwrap();
+                        let m = matches.get(*j).unwrap();
                         let is_white = m.player_indices[0] == i;
                         let is_turn_white = m.game.turn == poulet_chess::Color::White;
                         if is_white == is_turn_white {
@@ -126,7 +128,7 @@ impl Generation {
                                 m.game.board.flip(&mut board);
                             }
 
-                            Some((j, encode_board(&board)))
+                            Some((*j, encode_board(&board)))
                         } else {
                             None
                         }
@@ -135,12 +137,24 @@ impl Generation {
                     .unzip();
 
                 if match_indices.len() == 0 {
-                    continue;
+                    return None;
                 }
 
-                should_break = false;
-                let output = p.forward(&boards).await.unwrap();
+                let output = p.forward(&boards).await.ok()?;
+                Some((match_indices, output))
+            });
 
+            let results: Vec<_> = futures::future::join_all(player_futures)
+                .await
+                .into_iter()
+                .filter_map(|v| v)
+                .collect();
+
+            if results.is_empty() {
+                break;
+            }
+
+            for (match_indices, output) in results {
                 let mut rem = vec![];
 
                 for (l, mi) in output.into_iter().zip(match_indices) {
@@ -186,10 +200,6 @@ impl Generation {
                         self.player_map.get_mut(&i).unwrap().remove(&mi);
                     }
                 }
-            }
-
-            if should_break {
-                break;
             }
         }
     }
