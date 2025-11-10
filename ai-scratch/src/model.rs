@@ -374,7 +374,8 @@ impl Player {
             0,
             &self.hidden_layer_b.input_buffer,
             0,
-            self.hidden_layer_a.output_buffer.size(),
+            (input.len() * self.hidden_layer_a_params.output_size * std::mem::size_of::<f32>())
+                as u64,
         );
 
         {
@@ -392,7 +393,8 @@ impl Player {
             0,
             &self.output_layer.input_buffer,
             0,
-            self.hidden_layer_b.output_buffer.size(),
+            (input.len() * self.hidden_layer_b_params.output_size * std::mem::size_of::<f32>())
+                as u64,
         );
 
         {
@@ -410,7 +412,8 @@ impl Player {
             0,
             &self.output_layer.temp_buffer,
             0,
-            self.output_layer.output_buffer.size(),
+            (input.len() * self.output_layer_params.output_size * std::mem::size_of::<f32>())
+                as u64,
         );
 
         self.queue.submit([encoder.finish()]);
@@ -426,7 +429,11 @@ impl Player {
 
             rx.await??;
 
-            let output_data = self.output_layer.temp_buffer.get_mapped_range(..);
+            let output_data = self.output_layer.temp_buffer.get_mapped_range(
+                0..((input.len()
+                    * self.output_layer_params.output_size
+                    * std::mem::size_of::<f32>()) as u64),
+            );
 
             let slice: &[f32] = bytemuck::cast_slice(&output_data);
             slice
