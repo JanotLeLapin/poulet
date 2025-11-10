@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use poulet_ai_common::encode_board;
 use poulet_chess::{Board, Game};
+use rand::seq::SliceRandom;
 use rand_distr::Distribution;
 use rayon::prelude::*;
 
@@ -114,22 +115,18 @@ impl Generation {
     }
 
     pub fn generate_matches(&mut self, match_per_player: usize) {
+        let match_per_player = match_per_player.div_ceil(2);
+
         let mut rng = rand::rng();
-        let distr = rand::distr::Uniform::new(0, self.players.len()).unwrap();
+        let mut order: Vec<_> = (0..self.players.len()).collect();
+        order.shuffle(&mut rng);
 
-        for i in 0..self.players.len() {
-            for _ in 0..match_per_player.div_ceil(2) {
-                let (a, b) = loop {
-                    let a = distr.sample(&mut rng);
-                    let b = distr.sample(&mut rng);
-
-                    if a != b && a != i && b != i {
-                        break (a, b);
-                    }
-                };
-
-                self.create_match(a, i);
-                self.create_match(i, b);
+        for offset in 1..=match_per_player {
+            for i in 0..self.players.len() {
+                let a = order[i];
+                let b = order[(i + offset) % self.players.len()];
+                self.create_match(a, b);
+                self.create_match(b, a);
             }
         }
     }
