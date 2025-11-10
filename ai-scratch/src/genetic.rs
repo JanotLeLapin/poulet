@@ -120,38 +120,43 @@ impl Generation {
             let player_map = &self.player_map;
             let matches = &self.matches;
 
-            let player_futures = self.players.iter().enumerate().map(|(i, p)| async move {
-                let match_indices = player_map.get(&i).unwrap();
-                let (match_indices, boards): (Vec<_>, Vec<_>) = match_indices
-                    .iter()
-                    .filter_map(|j| {
-                        let m = matches.get(*j).unwrap();
-                        let is_white = m.player_indices[0] == i;
-                        let is_turn_white = m.game.turn == poulet_chess::Color::White;
-                        if is_white == is_turn_white {
-                            let mut board;
-                            if is_white {
-                                board = m.game.board.clone();
+            let player_futures: Vec<_> = self
+                .players
+                .par_iter()
+                .enumerate()
+                .map(|(i, p)| async move {
+                    let match_indices = player_map.get(&i).unwrap();
+                    let (match_indices, boards): (Vec<_>, Vec<_>) = match_indices
+                        .iter()
+                        .filter_map(|j| {
+                            let m = matches.get(*j).unwrap();
+                            let is_white = m.player_indices[0] == i;
+                            let is_turn_white = m.game.turn == poulet_chess::Color::White;
+                            if is_white == is_turn_white {
+                                let mut board;
+                                if is_white {
+                                    board = m.game.board.clone();
+                                } else {
+                                    board = Board::new();
+                                    m.game.board.flip_to(&mut board);
+                                }
+
+                                Some((*j, encode_board(&board)))
                             } else {
-                                board = Board::new();
-                                m.game.board.flip_to(&mut board);
+                                None
                             }
+                        })
+                        .take(BATCH_SIZE)
+                        .unzip();
 
-                            Some((*j, encode_board(&board)))
-                        } else {
-                            None
-                        }
-                    })
-                    .take(BATCH_SIZE)
-                    .unzip();
+                    if match_indices.len() == 0 {
+                        return None;
+                    }
 
-                if match_indices.len() == 0 {
-                    return None;
-                }
-
-                let output = p.forward(&boards).await.ok()?;
-                Some((match_indices, output))
-            });
+                    let output = p.forward(&boards).await.ok()?;
+                    Some((match_indices, output))
+                })
+                .collect();
 
             let start = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
             println!("awaiting");
