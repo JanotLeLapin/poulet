@@ -143,7 +143,28 @@ impl Board {
         self.0[(y * 8 + x) as usize] = square;
     }
 
-    pub fn flip(&self, to: &mut Self) {
+    pub fn flip(&mut self) {
+        for rank in 0..4 {
+            for file in 0..8 {
+                let [top, bottom] = [rank, 7 - rank].map(|rank| {
+                    self.get_square(file, rank).map(|p| {
+                        Piece::new(
+                            match p.color {
+                                Color::White => Color::Black,
+                                Color::Black => Color::White,
+                            },
+                            p.piece_type,
+                        )
+                    })
+                });
+
+                self.set_square(file, rank, bottom);
+                self.set_square(file, 7 - rank, top);
+            }
+        }
+    }
+
+    pub fn flip_to(&self, to: &mut Self) {
         for rank in 0..8 {
             for file in 0..8 {
                 let new = self.get_square(file, rank).map(|p| {

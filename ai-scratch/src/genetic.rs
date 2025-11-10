@@ -125,7 +125,7 @@ impl Generation {
                                 board = m.game.board.clone();
                             } else {
                                 board = Board::new();
-                                m.game.board.flip(&mut board);
+                                m.game.board.flip_to(&mut board);
                             }
 
                             Some((*j, encode_board(&board)))
