@@ -182,10 +182,7 @@ impl Generation {
                 .map(|(l, mi)| {
                     let m = self.matches.get(*mi).unwrap();
                     let mut tmp_game = m.game.clone();
-                    let (should_unflip, next) = match tmp_game.turn {
-                        poulet_chess::Color::White => (false, poulet_chess::Color::Black),
-                        poulet_chess::Color::Black => (true, poulet_chess::Color::White),
-                    };
+                    let should_unflip = tmp_game.turn == poulet_chess::Color::Black;
                     let prediction = predict_move(&mut tmp_game, should_unflip, l.clone(), 1.0);
                     if prediction
                         .map(|(_, src_file, src_rank, dst_file, dst_rank)| {
@@ -195,7 +192,12 @@ impl Generation {
                     {
                         if tmp_game.is_checkmate(m.game.turn) {
                             println!("{mi}: checkmate! {}", tmp_game.board.fen());
-                            return (mi, MatchUpdate::Finished([0.0; 2]));
+                            let score_update = if m.game.turn == poulet_chess::Color::White {
+                                [-10.0, 10.0]
+                            } else {
+                                [10.0, -10.0]
+                            };
+                            return (mi, MatchUpdate::Finished(score_update));
                         } else {
                             println!("{mi}: draw");
                             return (mi, MatchUpdate::Finished([0.0; 2]));
