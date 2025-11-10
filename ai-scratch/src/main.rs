@@ -12,16 +12,28 @@ fn cli() -> Command {
         .subcommands([
             Command::new("train")
                 .arg(
-                    arg!(<GEN> "Generation where the algorithm left off")
-                        .required(true)
+                    arg!(-g --generation [GEN] "Generation where the algorithm left off")
+                        .default_value("0")
+                        .value_parser(value_parser!(usize)),
+                )
+                .arg(
+                    arg!(-p --population [POP] "Population size")
+                        .default_value("64")
+                        .value_parser(value_parser!(usize)),
+                )
+                .arg(
+                    arg!(-m --matches [MATCHES] "Match count per individual")
+                        .default_value("16")
                         .value_parser(value_parser!(usize)),
                 )
                 .arg(
                     arg!(--interval [INTERVAL] "Generation save interval")
+                        .default_value("10")
                         .value_parser(value_parser!(usize)),
                 )
                 .arg(
                     arg!(--elite [ELITE] "Number of elite individuals for each generation")
+                        .default_value("8")
                         .value_parser(value_parser!(usize)),
                 ),
             Command::new("test")
@@ -37,16 +49,22 @@ async fn main() -> anyhow::Result<()> {
     let m = cli().get_matches();
     match m.subcommand() {
         Some(("train", sub)) => {
-            let mut g: usize = *sub.get_one::<usize>("GEN").unwrap();
-            let save_interval: usize = *sub.get_one("INTERVAL").unwrap_or(&5);
-            let elite_size: usize = *sub.get_one("ELITE").unwrap_or(&8);
+            let mut g: usize = *sub.get_one("generation").unwrap();
+            let pop_size: usize = *sub.get_one("population").unwrap();
+            let match_count: usize = *sub.get_one("matches").unwrap();
+            let save_interval: usize = *sub.get_one("interval").unwrap();
+            let elite_size: usize = *sub.get_one("elite").unwrap();
+
+            println!(
+                "starting training with population size = {pop_size}, match count = {match_count}"
+            );
 
             let mut generation;
             let mut elite;
 
             if g == 0 {
-                generation = Generation::init(&state, 32);
-                generation.generate_matches(16);
+                generation = Generation::init(&state, pop_size);
+                generation.generate_matches(match_count);
                 generation.play().await;
                 elite = generation.get_elite(elite_size);
             } else {
@@ -60,8 +78,8 @@ async fn main() -> anyhow::Result<()> {
 
             loop {
                 println!("--- GENERATION {g} ---");
-                generation = Generation::populate(&state, elite, 32);
-                generation.generate_matches(16);
+                generation = Generation::populate(&state, elite, pop_size);
+                generation.generate_matches(match_count);
                 generation.play().await;
                 elite = generation.get_elite(elite_size);
                 g += 1;
