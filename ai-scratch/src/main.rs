@@ -78,7 +78,7 @@ async fn main() -> anyhow::Result<()> {
 
             loop {
                 println!("--- GENERATION {g} ---");
-                generation = Generation::populate(&state, elite, pop_size);
+                generation = Generation::populate(&state, elite, pop_size, 2);
                 generation.generate_matches(match_count);
                 generation.play().await;
                 elite = generation.get_elite(elite_size);
