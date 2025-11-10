@@ -13,9 +13,9 @@ pub struct Match {
     game: Game,
 }
 
-enum MatchUpdate {
-    Continue(Game, [f32; 2]),
-    Finished([f32; 2]),
+struct MatchUpdate {
+    new_game: Option<Game>,
+    score_updates: [f32; 2],
 }
 
 pub struct Generation {
@@ -190,10 +190,23 @@ impl Generation {
                             } else {
                                 [10.0, -10.0]
                             };
-                            return (mi, MatchUpdate::Finished(score_update));
+
+                            return (
+                                mi,
+                                MatchUpdate {
+                                    new_game: None,
+                                    score_updates: score_update,
+                                },
+                            );
                         } else {
                             println!("{mi}: stalemate");
-                            return (mi, MatchUpdate::Finished([0.0; 2]));
+                            return (
+                                mi,
+                                MatchUpdate {
+                                    new_game: None,
+                                    score_updates: [0.0; 2],
+                                },
+                            );
                         }
                     }
 
@@ -203,28 +216,33 @@ impl Generation {
 
                     if tmp_game.until_stalemate >= 60 {
                         println!("{mi}: draw");
-                        return (mi, MatchUpdate::Finished([0.0; 2]));
+                        return (
+                            mi,
+                            MatchUpdate {
+                                new_game: None,
+                                score_updates: [0.0; 2],
+                            },
+                        );
                     }
 
-                    (mi, MatchUpdate::Continue(tmp_game, [0.0; 2]))
+                    (
+                        mi,
+                        MatchUpdate {
+                            new_game: Some(tmp_game),
+                            score_updates: [0.0; 2],
+                        },
+                    )
                 })
                 .collect();
 
             let mut rem = vec![];
             for (mi, update) in new_states {
-                match update {
-                    MatchUpdate::Continue(new_game, score_updates) => {
-                        let m: &mut Match = self.matches.get_mut(*mi).unwrap();
-                        m.scores[0] += score_updates[0];
-                        m.scores[1] += score_updates[1];
-                        m.game = new_game;
-                    }
-                    MatchUpdate::Finished(score_updates) => {
-                        let m: &mut Match = self.matches.get_mut(*mi).unwrap();
-                        m.scores[0] += score_updates[0];
-                        m.scores[1] += score_updates[1];
-                        rem.push(mi);
-                    }
+                let m: &mut Match = self.matches.get_mut(*mi).unwrap();
+                m.scores[0] += update.score_updates[0];
+                m.scores[1] += update.score_updates[1];
+                match update.new_game {
+                    Some(new_game) => m.game = new_game,
+                    None => rem.push(mi),
                 }
             }
 
