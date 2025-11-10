@@ -1,8 +1,12 @@
-use std::collections::HashSet;
+use std::{
+    collections::HashSet,
+    time::{SystemTime, UNIX_EPOCH},
+};
 
 use poulet_ai_common::encode_board;
 use poulet_chess::{Board, Game};
 use rand_distr::Distribution;
+use rayon::prelude::*;
 
 use crate::model::{BATCH_SIZE, Player, State, predict_move};
 
@@ -10,6 +14,11 @@ pub struct Match {
     player_indices: [usize; 2],
     scores: [f32; 2],
     game: Game,
+}
+
+enum MatchUpdate {
+    Continue(Game, [f32; 2]),
+    Finished([f32; 2]),
 }
 
 pub struct Generation {
@@ -144,61 +153,84 @@ impl Generation {
                 Some((match_indices, output))
             });
 
+            let start = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+            println!("awaiting");
             let results: Vec<_> = futures::future::join_all(player_futures)
                 .await
                 .into_iter()
                 .filter_map(|v| v)
+                .flat_map(|(match_indices, output)| output.into_iter().zip(match_indices))
                 .collect();
 
             if results.is_empty() {
                 break;
             }
+            let end = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+            println!(
+                "took {:?} for {}",
+                end - start,
+                results.iter().map(|(v, _)| v.iter().count()).sum::<usize>()
+            );
 
-            for (match_indices, output) in results {
-                let mut rem = vec![];
-
-                for (l, mi) in output.into_iter().zip(match_indices) {
-                    let m: &mut Match = self.matches.get_mut(mi).unwrap();
-                    let (should_unflip, next) = match m.game.turn {
+            let new_states: Vec<_> = results
+                .par_iter()
+                .map(|(l, mi)| {
+                    let m = self.matches.get(*mi).unwrap();
+                    let mut tmp_game = m.game.clone();
+                    let (should_unflip, next) = match tmp_game.turn {
                         poulet_chess::Color::White => (false, poulet_chess::Color::Black),
                         poulet_chess::Color::Black => (true, poulet_chess::Color::White),
                     };
                     let (_, src_file, src_rank, dst_file, dst_rank) =
-                        match predict_move(&mut m.game, should_unflip, l, 1.0) {
+                        match predict_move(&mut tmp_game, should_unflip, l.clone(), 1.0) {
                             Ok(prediction) => prediction,
                             Err(_) => {
-                                rem.push(mi);
-                                continue;
+                                return (mi, MatchUpdate::Finished([0.0; 2]));
                             }
                         };
 
-                    if !m.game.safe_move(src_file, src_rank, dst_file, dst_rank) {
-                        rem.push(mi);
-                        continue;
+                    if !tmp_game.safe_move(src_file, src_rank, dst_file, dst_rank) {
+                        return (mi, MatchUpdate::Finished([0.0; 2]));
                     }
 
-                    m.game.do_move(src_file, src_rank, dst_file, dst_rank);
+                    tmp_game.do_move(src_file, src_rank, dst_file, dst_rank);
 
-                    if m.game.is_checkmate(next) {
-                        m.scores[usize::from(m.game.turn)] = 10.0;
-                        m.scores[usize::from(next)] = -10.0;
-                        rem.push(mi);
-                        println!("checkmate! {}", m.game.board.fen());
-                        continue;
+                    if tmp_game.is_checkmate(next) {
+                        println!("{mi}: checkmate! {}", tmp_game.board.fen());
+                        return (mi, MatchUpdate::Finished([0.0; 2]));
                     }
 
-                    if m.game.until_stalemate >= 60 {
+                    if tmp_game.until_stalemate >= 60 {
+                        return (mi, MatchUpdate::Finished([0.0; 2]));
+                    }
+
+                    (mi, MatchUpdate::Continue(tmp_game, [0.0; 2]))
+                })
+                .collect();
+
+            let mut rem = vec![];
+            for (mi, update) in new_states {
+                match update {
+                    MatchUpdate::Continue(new_game, score_updates) => {
+                        let m: &mut Match = self.matches.get_mut(*mi).unwrap();
+                        m.scores[0] += score_updates[0];
+                        m.scores[1] += score_updates[1];
+                        m.game = new_game;
+                    }
+                    MatchUpdate::Finished(score_updates) => {
+                        let m: &mut Match = self.matches.get_mut(*mi).unwrap();
+                        m.scores[0] += score_updates[0];
+                        m.scores[1] += score_updates[1];
                         rem.push(mi);
-                        continue;
                     }
                 }
+            }
 
-                for mi in rem {
-                    println!("removing match {mi}");
-                    let m: &Match = self.matches.get(mi).unwrap();
-                    for i in m.player_indices {
-                        self.player_map.get_mut(&i).unwrap().remove(&mi);
-                    }
+            for mi in rem {
+                println!("removing match {mi}");
+                let m: &Match = self.matches.get(*mi).unwrap();
+                for i in m.player_indices {
+                    self.player_map.get_mut(&i).unwrap().remove(&mi);
                 }
             }
         }

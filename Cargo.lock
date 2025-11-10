@@ -3498,6 +3498,7 @@ dependencies = [
  "poulet-chess",
  "rand",
  "rand_distr",
+ "rayon",
  "serde",
  "tokio",
  "wgpu 27.0.1",
