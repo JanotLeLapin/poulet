@@ -73,7 +73,7 @@ impl Generation {
 
     pub fn populate(
         state: &State,
-        elite: Vec<Player>,
+        parents: Vec<Player>,
         pop_size: usize,
         mut_dev: f32,
         burst_mut_rate: f32,
@@ -81,9 +81,9 @@ impl Generation {
         elitism_count: usize,
     ) -> Self {
         let mut rng = rand::rng();
-        let distr = rand::distr::Uniform::new(0, elite.len()).unwrap();
+        let distr = rand::distr::Uniform::new(0, parents.len()).unwrap();
 
-        let corrected_elitism_count = elitism_count.min(elite.len());
+        let corrected_elitism_count = elitism_count.min(parents.len());
 
         let mut players = Vec::with_capacity(pop_size);
 
@@ -103,16 +103,17 @@ impl Generation {
                 mut_dev
             };
 
-            let player =
-                elite
-                    .get(a)
-                    .unwrap()
-                    .crossover_and_mutate(state, elite.get(b).unwrap(), 0.5, dev);
+            let player = parents.get(a).unwrap().crossover_and_mutate(
+                state,
+                parents.get(b).unwrap(),
+                0.5,
+                dev,
+            );
 
             players.push(player);
         }
 
-        let mut truncated_elite = elite.into_iter().take(corrected_elitism_count).collect();
+        let mut truncated_elite = parents.into_iter().take(corrected_elitism_count).collect();
         players.append(&mut truncated_elite);
 
         players.reverse();
