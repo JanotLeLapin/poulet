@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use poulet_ai_scratch::{
     genetic::{Generation, MatchOutcome},
     model::{Player, State},
@@ -112,15 +114,13 @@ fn tournament_selection(scores: &[f32], tournament_size: usize, parents: usize) 
 }
 
 fn get_selected_players(generation: Generation, selection: &[usize]) -> Vec<Player> {
-    let mut iter = selection.iter().copied();
-    let mut next = iter.next();
+    let set: HashSet<_> = selection.iter().copied().collect();
 
     let mut parents = Vec::with_capacity(selection.len());
 
     for (i, p) in generation.players.into_iter().enumerate() {
-        if Some(i) == next {
+        if set.contains(&i) {
             parents.push(p);
-            next = iter.next();
         }
     }
 
