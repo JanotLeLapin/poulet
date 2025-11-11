@@ -61,7 +61,7 @@ fn cli() -> Command {
                         .value_parser(value_parser!(usize)),
                 )
                 .arg(
-                    arg!(--elite [ELITE] "Number of elite individuals for each generation")
+                    arg!(--parents [PARENTS] "Number of parent individuals for each generation")
                         .default_value("8")
                         .value_parser(value_parser!(usize)),
                 ),
@@ -90,7 +90,7 @@ async fn main() -> anyhow::Result<()> {
             let pop_size: usize = *sub.get_one("population").unwrap();
             let match_count: usize = *sub.get_one("matches").unwrap();
             let save_interval: usize = *sub.get_one("interval").unwrap();
-            let elite_size: usize = *sub.get_one("elite").unwrap();
+            let parent_count: usize = *sub.get_one("parents").unwrap();
 
             println!(
                 r#"
@@ -101,21 +101,21 @@ burst mutation deviation = {burst_mut_dev}
 population size = {pop_size}
 match count = {match_count}
 save interval = {save_interval}
-elite size = {elite_size}
+parent count = {parent_count}
 "#,
                 burst_mut_rate * 100.0,
             );
 
             let mut generation;
-            let mut elite;
+            let mut parents;
 
             if g == 0 {
                 generation = Generation::init(&state, pop_size);
                 generation.generate_matches(match_count);
                 generation.play().await;
-                elite = generation.get_elite(elite_size);
+                parents = generation.get_fittest(parent_count);
             } else {
-                elite = (0..elite_size)
+                parents = (0..parent_count)
                     .map(|i| {
                         Player::load(&state, &format!("./ai-scratch/models/model-{g}-{i}.params"))
                             .unwrap()
@@ -127,7 +127,7 @@ elite size = {elite_size}
                 println!("--- GENERATION {g} ---");
                 generation = Generation::populate(
                     &state,
-                    elite,
+                    parents,
                     pop_size,
                     mut_dev,
                     burst_mut_rate,
@@ -136,11 +136,11 @@ elite size = {elite_size}
                 );
                 generation.generate_matches(match_count);
                 generation.play().await;
-                elite = generation.get_elite(elite_size);
+                parents = generation.get_fittest(parent_count);
                 g += 1;
 
                 if g % save_interval == 0 {
-                    elite.iter().enumerate().for_each(|(i, p)| {
+                    parents.iter().enumerate().for_each(|(i, p)| {
                         p.save(&format!("./ai-scratch/models/model-{g}-{i}.params"))
                             .unwrap()
                     });

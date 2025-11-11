@@ -301,7 +301,7 @@ impl Generation {
         }
     }
 
-    pub fn get_elite(self, count: usize) -> Vec<Player> {
+    pub fn get_fittest(self, count: usize) -> Vec<Player> {
         let mut scores: Vec<f32> = (0..self.players.len()).map(|_| 0.0).collect();
         for m in self.matches.iter() {
             let [w, b] = m.player_indices;
