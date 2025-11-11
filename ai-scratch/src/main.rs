@@ -4,6 +4,7 @@ use poulet_ai_scratch::{
 };
 
 use clap::{Arg, Command, arg, value_parser};
+use rand_distr::Distribution;
 
 fn cli() -> Command {
     Command::new("poulet")
@@ -64,9 +65,15 @@ fn cli() -> Command {
                     arg!(--parents [PARENTS] "Number of parent individuals for each generation")
                         .default_value("8")
                         .value_parser(value_parser!(usize)),
-                ).arg(
+                )
+                .arg(
                     arg!(--elite [ELITE] "Number of fit individuals that will remain in the next generation")
                         .default_value("2")
+                        .value_parser(value_parser!(usize))
+                )
+                .arg(
+                    arg!(--tournament [TOURNAMENT] "Tournament size for parent selection")
+                        .default_value("4")
                         .value_parser(value_parser!(usize))
                 ),
             Command::new("test")
@@ -77,6 +84,47 @@ fn cli() -> Command {
                         .value_parser(value_parser!(usize)),
                 ),
         ])
+}
+
+fn tournament_selection(scores: &[f32], tournament_size: usize, parents: usize) -> Vec<usize> {
+    let mut rng = rand::rng();
+    let distr = rand::distr::Uniform::new(0, scores.len()).unwrap();
+
+    let mut res = Vec::with_capacity(parents);
+
+    while res.len() < parents {
+        let mut max_score = f32::NEG_INFINITY;
+        let mut max_idx = 0;
+
+        for _ in 0..tournament_size {
+            let idx = distr.sample(&mut rng);
+
+            if scores[idx] > max_score {
+                max_idx = idx;
+                max_score = scores[idx];
+            }
+        }
+
+        res.push(max_idx);
+    }
+
+    res
+}
+
+fn get_selected_players(generation: Generation, selection: &[usize]) -> Vec<Player> {
+    let mut iter = selection.iter().copied();
+    let mut next = iter.next();
+
+    let mut parents = Vec::with_capacity(selection.len());
+
+    for (i, p) in generation.players.into_iter().enumerate() {
+        if Some(i) == next {
+            parents.push(p);
+            next = iter.next();
+        }
+    }
+
+    parents
 }
 
 #[tokio::main]
@@ -96,6 +144,7 @@ async fn main() -> anyhow::Result<()> {
             let save_interval: usize = *sub.get_one("interval").unwrap();
             let parent_count: usize = *sub.get_one("parents").unwrap();
             let elite_count: usize = *sub.get_one("elite").unwrap();
+            let tournament_size: usize = *sub.get_one("tournament").unwrap();
 
             println!(
                 r#"
@@ -108,6 +157,7 @@ match count = {match_count}
 save interval = {save_interval}
 parent count = {parent_count}
 elite count = {elite_count}
+tournament size = {tournament_size}
 "#,
                 burst_mut_rate * 100.0,
             );
@@ -119,7 +169,9 @@ elite count = {elite_count}
                 generation = Generation::init(&state, pop_size);
                 generation.generate_matches(match_count);
                 generation.play().await;
-                parents = generation.get_fittest(parent_count);
+                let scores = generation.calculate_scores();
+                let selection = tournament_selection(&scores, tournament_size, parent_count);
+                parents = get_selected_players(generation, &selection);
             } else {
                 parents = Vec::with_capacity(parent_count);
 
@@ -161,7 +213,9 @@ elite count = {elite_count}
                 );
                 generation.generate_matches(match_count);
                 generation.play().await;
-                parents = generation.get_fittest(parent_count);
+                let scores = generation.calculate_scores();
+                let selection = tournament_selection(&scores, tournament_size, parent_count);
+                parents = get_selected_players(generation, &selection);
                 g += 1;
 
                 if g % save_interval == 0 {

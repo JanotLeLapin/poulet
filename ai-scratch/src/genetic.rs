@@ -301,7 +301,7 @@ impl Generation {
         }
     }
 
-    pub fn get_fittest(self, count: usize) -> Vec<Player> {
+    pub fn calculate_scores(&self) -> Vec<f32> {
         let mut scores: Vec<f32> = (0..self.players.len()).map(|_| 0.0).collect();
         for m in self.matches.iter() {
             let [w, b] = m.player_indices;
@@ -309,15 +309,6 @@ impl Generation {
             scores[b] += m.scores[1];
         }
 
-        let mut enumerated: Vec<(usize, f32)> = scores.into_iter().enumerate().collect();
-        enumerated.sort_by(|(_, a), (_, b)| b.partial_cmp(a).unwrap());
-
-        let indices: HashSet<_> = enumerated.iter().map(|(i, _)| *i).take(count).collect();
-
-        self.players
-            .into_iter()
-            .enumerate()
-            .filter_map(|(i, p)| indices.contains(&i).then_some(p))
-            .collect()
+        scores
     }
 }
