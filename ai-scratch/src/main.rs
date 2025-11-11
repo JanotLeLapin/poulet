@@ -1,5 +1,5 @@
 use poulet_ai_scratch::{
-    genetic::Generation,
+    genetic::{Generation, MatchOutcome},
     model::{Player, State},
 };
 
@@ -167,13 +167,15 @@ elite size = {elite_size}
             generation.play().await;
 
             for (i, m) in generation.matches.iter().enumerate() {
-                // TODO: we should encode the actual game outcome somewhere else
-                if m.scores[0] == m.scores[1] {
-                    continue;
-                }
+                let outcome = m.outcome.unwrap();
+
+                let winner = match outcome {
+                    MatchOutcome::Checkmate(winner) => winner,
+                    _ => continue,
+                };
 
                 let player_is_white = (i % 2) == 0;
-                let white_won = m.scores[0] > 0.0;
+                let white_won = winner == poulet_chess::Color::White;
                 if player_is_white == white_won {
                     wins[0] += 1;
                     losses[1] += 1;

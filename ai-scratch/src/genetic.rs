@@ -8,14 +8,27 @@ use rayon::prelude::*;
 
 use crate::model::{BATCH_SIZE, Player, State, predict_move};
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum MatchOutcome {
+    Checkmate(poulet_chess::Color),
+    Stalemate,
+    Draw,
+}
+
 pub struct Match {
     pub player_indices: [usize; 2],
     pub scores: [f32; 2],
+    pub outcome: Option<MatchOutcome>,
     game: Game,
 }
 
+enum MatchUpdateStatus {
+    Finished(MatchOutcome),
+    Continue(Game),
+}
+
 struct MatchUpdate {
-    new_game: Option<Game>,
+    status: MatchUpdateStatus,
     score_updates: [f32; 2],
 }
 
@@ -30,6 +43,7 @@ impl Match {
         Self {
             player_indices: [white, black],
             scores: [0.0; 2],
+            outcome: None,
             game: Game::default(),
         }
     }
@@ -210,16 +224,19 @@ impl Generation {
                     {
                         if tmp_game.is_checkmate(m.game.turn) {
                             println!("{mi}: checkmate! {}", tmp_game.board.fen());
-                            let score_update = if m.game.turn == poulet_chess::Color::White {
-                                [-10.0, 10.0]
-                            } else {
-                                [10.0, -10.0]
-                            };
+                            let (score_update, winner) =
+                                if m.game.turn == poulet_chess::Color::White {
+                                    ([-10.0, 10.0], poulet_chess::Color::Black)
+                                } else {
+                                    ([10.0, -10.0], poulet_chess::Color::White)
+                                };
 
                             return (
                                 mi,
                                 MatchUpdate {
-                                    new_game: None,
+                                    status: MatchUpdateStatus::Finished(MatchOutcome::Checkmate(
+                                        winner,
+                                    )),
                                     score_updates: score_update,
                                 },
                             );
@@ -228,7 +245,7 @@ impl Generation {
                             return (
                                 mi,
                                 MatchUpdate {
-                                    new_game: None,
+                                    status: MatchUpdateStatus::Finished(MatchOutcome::Stalemate),
                                     score_updates: [0.0; 2],
                                 },
                             );
@@ -244,7 +261,7 @@ impl Generation {
                         return (
                             mi,
                             MatchUpdate {
-                                new_game: None,
+                                status: MatchUpdateStatus::Finished(MatchOutcome::Draw),
                                 score_updates: [0.0; 2],
                             },
                         );
@@ -253,7 +270,7 @@ impl Generation {
                     (
                         mi,
                         MatchUpdate {
-                            new_game: Some(tmp_game),
+                            status: MatchUpdateStatus::Continue(tmp_game),
                             score_updates: [0.0; 2],
                         },
                     )
@@ -265,9 +282,12 @@ impl Generation {
                 let m: &mut Match = self.matches.get_mut(*mi).unwrap();
                 m.scores[0] += update.score_updates[0];
                 m.scores[1] += update.score_updates[1];
-                match update.new_game {
-                    Some(new_game) => m.game = new_game,
-                    None => rem.push(mi),
+                match update.status {
+                    MatchUpdateStatus::Continue(new_game) => m.game = new_game,
+                    MatchUpdateStatus::Finished(outcome) => {
+                        m.outcome = Some(outcome);
+                        rem.push(mi);
+                    }
                 }
             }
 
