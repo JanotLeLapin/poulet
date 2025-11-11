@@ -3,7 +3,7 @@ use poulet_ai_scratch::{
     model::{Player, State},
 };
 
-use clap::{Command, arg, value_parser};
+use clap::{Arg, Command, arg, value_parser};
 
 fn cli() -> Command {
     Command::new("poulet")
@@ -12,9 +12,38 @@ fn cli() -> Command {
         .subcommands([
             Command::new("train")
                 .arg(
-                    arg!(-g --generation [GEN] "Generation where the algorithm left off")
+                    Arg::new("gen-start")
+                        .long("gen-start")
+                        .help("Start generation")
                         .default_value("0")
                         .value_parser(value_parser!(usize)),
+                )
+                .arg(
+                    Arg::new("gen-end")
+                        .long("gen-end")
+                        .help("End generation")
+                        .value_parser(value_parser!(usize)),
+                )
+                .arg(
+                    Arg::new("mut-dev")
+                        .long("mut-dev")
+                        .help("Mutation standard deviation")
+                        .default_value("0.04")
+                        .value_parser(value_parser!(f32)),
+                )
+                .arg(
+                    Arg::new("burst-mut-rate")
+                        .long("burst-mut-rate")
+                        .help("Burst mutation population rate")
+                        .default_value("0.0")
+                        .value_parser(value_parser!(f32)),
+                )
+                .arg(
+                    Arg::new("burst-mut-dev")
+                        .long("burst-mut-dev")
+                        .help("Burst mutation standard deviation")
+                        .default_value("0.2")
+                        .value_parser(value_parser!(f32)),
                 )
                 .arg(
                     arg!(-p --population [POP] "Population size")
@@ -49,14 +78,28 @@ async fn main() -> anyhow::Result<()> {
     let m = cli().get_matches();
     match m.subcommand() {
         Some(("train", sub)) => {
-            let mut g: usize = *sub.get_one("generation").unwrap();
+            let mut g: usize = *sub.get_one("gen-start").unwrap();
+            let g_end: usize = *sub.get_one("gen-end").unwrap_or(&usize::MAX);
+            let mut_dev: f32 = *sub.get_one("mut-dev").unwrap();
+            let burst_mut_rate: f32 = *sub.get_one("burst-mut-rate").unwrap();
+            let burst_mut_dev: f32 = *sub.get_one("burst-mut-dev").unwrap();
             let pop_size: usize = *sub.get_one("population").unwrap();
             let match_count: usize = *sub.get_one("matches").unwrap();
             let save_interval: usize = *sub.get_one("interval").unwrap();
             let elite_size: usize = *sub.get_one("elite").unwrap();
 
             println!(
-                "starting training with population size = {pop_size}, match count = {match_count}"
+                r#"
+starting training with following params:
+mutation deviation = {mut_dev}
+burst mutation rate: {}%
+burst mutation deviation = {burst_mut_dev}
+population size = {pop_size}
+match count = {match_count}
+save interval = {save_interval}
+elite size = {elite_size}
+"#,
+                burst_mut_rate * 100.0,
             );
 
             let mut generation;
@@ -76,9 +119,17 @@ async fn main() -> anyhow::Result<()> {
                     .collect();
             }
 
-            loop {
+            while g <= g_end {
                 println!("--- GENERATION {g} ---");
-                generation = Generation::populate(&state, elite, pop_size, 2);
+                generation = Generation::populate(
+                    &state,
+                    elite,
+                    pop_size,
+                    mut_dev,
+                    burst_mut_rate,
+                    burst_mut_dev,
+                    2,
+                );
                 generation.generate_matches(match_count);
                 generation.play().await;
                 elite = generation.get_elite(elite_size);

@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use poulet_ai_common::encode_board;
 use poulet_chess::{Board, Game};
-use rand::seq::SliceRandom;
+use rand::{Rng, seq::SliceRandom};
 use rand_distr::Distribution;
 use rayon::prelude::*;
 
@@ -61,6 +61,9 @@ impl Generation {
         state: &State,
         elite: Vec<Player>,
         pop_size: usize,
+        mut_dev: f32,
+        burst_mut_rate: f32,
+        burst_mut_dev: f32,
         elitism_count: usize,
     ) -> Self {
         let mut rng = rand::rng();
@@ -79,11 +82,18 @@ impl Generation {
                     break (a, b);
                 }
             };
+
+            let dev = if rng.random::<f32>() < burst_mut_rate {
+                burst_mut_dev
+            } else {
+                mut_dev
+            };
+
             let player =
                 elite
                     .get(a)
                     .unwrap()
-                    .crossover_and_mutate(state, elite.get(b).unwrap(), 0.5, 0.04);
+                    .crossover_and_mutate(state, elite.get(b).unwrap(), 0.5, dev);
 
             players.push(player);
         }
