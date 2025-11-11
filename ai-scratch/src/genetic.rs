@@ -293,7 +293,6 @@ impl Generation {
             }
 
             for mi in rem {
-                println!("removing match {mi}");
                 let m: &Match = self.matches.get(*mi).unwrap();
                 for i in m.player_indices {
                     self.player_map.get_mut(&i).unwrap().remove(&mi);
