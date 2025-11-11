@@ -64,6 +64,10 @@ fn cli() -> Command {
                     arg!(--parents [PARENTS] "Number of parent individuals for each generation")
                         .default_value("8")
                         .value_parser(value_parser!(usize)),
+                ).arg(
+                    arg!(--elite [ELITE] "Number of fit individuals that will remain in the next generation")
+                        .default_value("2")
+                        .value_parser(value_parser!(usize))
                 ),
             Command::new("test")
                 .arg(arg!(<PLAYER> "Path to player model"))
@@ -91,6 +95,7 @@ async fn main() -> anyhow::Result<()> {
             let match_count: usize = *sub.get_one("matches").unwrap();
             let save_interval: usize = *sub.get_one("interval").unwrap();
             let parent_count: usize = *sub.get_one("parents").unwrap();
+            let elite_count: usize = *sub.get_one("elite").unwrap();
 
             println!(
                 r#"
@@ -102,6 +107,7 @@ population size = {pop_size}
 match count = {match_count}
 save interval = {save_interval}
 parent count = {parent_count}
+elite count = {elite_count}
 "#,
                 burst_mut_rate * 100.0,
             );
@@ -132,7 +138,7 @@ parent count = {parent_count}
                     mut_dev,
                     burst_mut_rate,
                     burst_mut_dev,
-                    2,
+                    elite_count,
                 );
                 generation.generate_matches(match_count);
                 generation.play().await;
