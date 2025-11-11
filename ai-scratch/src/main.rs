@@ -121,12 +121,31 @@ elite count = {elite_count}
                 generation.play().await;
                 parents = generation.get_fittest(parent_count);
             } else {
-                parents = (0..parent_count)
-                    .map(|i| {
-                        Player::load(&state, &format!("./ai-scratch/models/model-{g}-{i}.params"))
-                            .unwrap()
-                    })
-                    .collect();
+                parents = Vec::with_capacity(parent_count);
+
+                let mut highest_saved_parent: usize = usize::MAX;
+                let mut parent_i = 0;
+
+                while parent_i < parent_count {
+                    match Player::load(
+                        &state,
+                        &format!(
+                            "./ai-scratch/models/model-{g}-{}.params",
+                            parent_i % highest_saved_parent
+                        ),
+                    ) {
+                        Ok(p) => {
+                            parents.push(p);
+                            parent_i += 1;
+                        }
+                        Err(_) => {
+                            if parent_i == 0 {
+                                panic!("generation most likely doesn't exist yet")
+                            }
+                            highest_saved_parent = parent_i;
+                        }
+                    }
+                }
             }
 
             while g <= g_end {
