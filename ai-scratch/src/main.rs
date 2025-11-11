@@ -67,7 +67,11 @@ fn cli() -> Command {
                 ),
             Command::new("test")
                 .arg(arg!(<PLAYER> "Path to player model"))
-                .arg(arg!(--games [GAMES] "Game count").value_parser(value_parser!(usize))),
+                .arg(
+                    arg!(--games [GAMES] "Game count")
+                        .default_value("64")
+                        .value_parser(value_parser!(usize)),
+                ),
         ])
 }
 
@@ -144,32 +148,40 @@ elite size = {elite_size}
             }
         }
         Some(("test", sub)) => {
-            // let player_path: &String = sub.get_one("PLAYER").unwrap();
-            // let game_count: usize = *sub.get_one("GAMES").unwrap_or(&16);
+            let player_path: &String = sub.get_one("PLAYER").unwrap();
+            let game_count: usize = *sub.get_one("games").unwrap_or(&16);
 
-            // let mut players = Vec::with_capacity(2);
-            // players.push(Player::load(&state, player_path)?);
-            // players.push(Player::init(&state)?);
+            let mut players = Vec::with_capacity(2);
+            players.push(Player::load(&state, player_path)?);
+            players.push(Player::init(&state)?);
 
-            // let mut scores = vec![0.0, 0.0];
+            let mut scores = vec![0.0, 0.0];
 
-            // for i in 0..game_count {
-            //     let a = i % 2;
-            //     let b = (i + 1) % 2;
-            //     let mut m = Match::new(a, b);
-            //     println!("starting game {i} {a} {b}");
-            //     m.match_loop(&players);
+            let mut generation = Generation::new(players);
 
-            //     scores[a] += (m.white_score / 20.0) + 0.5;
-            //     scores[b] += (m.black_score / 20.0) + 0.5;
-            // }
+            for i in 0..game_count {
+                generation.create_match(i % 2, (i + 1) % 2);
+            }
 
-            // println!("Your score: {}", scores[0]);
-            // println!("Random score: {}", scores[1]);
-            // println!(
-            //     "Win rate: {}%",
-            //     (scores[0] as f32) / ((scores[0] + scores[1]) as f32) * 100.0
-            // );
+            generation.play().await;
+
+            for (i, m) in generation.matches.iter().enumerate() {
+                let [ws, bs] = m.scores.map(|s| (s / 20.0) + 0.5);
+                if (i % 2) == 0 {
+                    scores[0] += ws;
+                    scores[1] += bs;
+                } else {
+                    scores[1] += ws;
+                    scores[0] += bs;
+                }
+            }
+
+            println!("Your score: {}", scores[0]);
+            println!("Random score: {}", scores[1]);
+            println!(
+                "Win rate: {}%",
+                (scores[0] as f32) / ((scores[0] + scores[1]) as f32) * 100.0
+            );
         }
         _ => {
             cli().print_help()?;

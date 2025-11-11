@@ -9,8 +9,8 @@ use rayon::prelude::*;
 use crate::model::{BATCH_SIZE, Player, State, predict_move};
 
 pub struct Match {
-    player_indices: [usize; 2],
-    scores: [f32; 2],
+    pub player_indices: [usize; 2],
+    pub scores: [f32; 2],
     game: Game,
 }
 
@@ -20,8 +20,8 @@ struct MatchUpdate {
 }
 
 pub struct Generation {
-    matches: Vec<Match>,
-    players: Vec<Player>,
+    pub matches: Vec<Match>,
+    pub players: Vec<Player>,
     player_map: std::collections::HashMap<usize, std::collections::HashSet<usize>>,
 }
 
