@@ -155,7 +155,8 @@ elite size = {elite_size}
             players.push(Player::load(&state, player_path)?);
             players.push(Player::init(&state)?);
 
-            let mut scores = vec![0.0, 0.0];
+            let mut wins = vec![0, 0];
+            let mut losses = vec![0, 0];
 
             let mut generation = Generation::new(players);
 
@@ -166,21 +167,44 @@ elite size = {elite_size}
             generation.play().await;
 
             for (i, m) in generation.matches.iter().enumerate() {
-                let [ws, bs] = m.scores.map(|s| (s / 20.0) + 0.5);
-                if (i % 2) == 0 {
-                    scores[0] += ws;
-                    scores[1] += bs;
+                // TODO: we should encode the actual game outcome somewhere else
+                if m.scores[0] == m.scores[1] {
+                    continue;
+                }
+
+                let player_is_white = (i % 2) == 0;
+                let white_won = m.scores[0] > 0.0;
+                if player_is_white == white_won {
+                    wins[0] += 1;
+                    losses[1] += 1;
                 } else {
-                    scores[1] += ws;
-                    scores[0] += bs;
+                    wins[1] += 1;
+                    losses[0] += 1;
                 }
             }
 
-            println!("Your score: {}", scores[0]);
-            println!("Random score: {}", scores[1]);
             println!(
-                "Win rate: {}%",
-                (scores[0] as f32) / ((scores[0] + scores[1]) as f32) * 100.0
+                r#"
+Your wins: {}/{game_count} (rate: {}%)
+Your losses: {}/{game_count} (rate: {}%)
+Your global score: {}
+
+Random wins: {}/{game_count} (rate: {}%)
+Random losses: {}/{game_count} (rate: {}%)
+Random global score: {}
+            "#,
+                wins[0],
+                (wins[0] as f32) / (game_count as f32) * 100.0,
+                losses[0],
+                (losses[0] as f32) / (game_count as f32) * 100.0,
+                ((game_count - wins[0] - losses[0]) as f32) * 0.5 + (wins[0] as f32)
+                    - (losses[0] as f32),
+                wins[1],
+                (wins[1] as f32) / (game_count as f32) * 100.0,
+                losses[1],
+                (losses[1] as f32) / (game_count as f32) * 100.0,
+                ((game_count - wins[1] - losses[1]) as f32) * 0.5 + (wins[1] as f32)
+                    - (losses[1] as f32)
             );
         }
         _ => {
