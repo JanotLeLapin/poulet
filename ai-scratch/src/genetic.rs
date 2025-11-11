@@ -169,7 +169,7 @@ impl Generation {
     }
 
     pub async fn play(&mut self) {
-        loop {
+        for move_count in 0.. {
             let player_map = &self.player_map;
             let matches = &self.matches;
 
@@ -236,7 +236,6 @@ impl Generation {
                         .unwrap_or(true)
                     {
                         if tmp_game.is_checkmate(m.game.turn) {
-                            println!("{mi}: checkmate! {}", tmp_game.board.fen());
                             let (score_update, winner) =
                                 if m.game.turn == poulet_chess::Color::White {
                                     ([-10.0, 10.0], poulet_chess::Color::Black)
@@ -254,7 +253,6 @@ impl Generation {
                                 },
                             );
                         } else {
-                            println!("{mi}: stalemate");
                             return (
                                 mi,
                                 MatchUpdate {
@@ -270,7 +268,6 @@ impl Generation {
                     tmp_game.do_move(src_file, src_rank, dst_file, dst_rank);
 
                     if tmp_game.until_stalemate >= 60 {
-                        println!("{mi}: draw");
                         return (
                             mi,
                             MatchUpdate {
@@ -298,6 +295,14 @@ impl Generation {
                 match update.status {
                     MatchUpdateStatus::Continue(new_game) => m.game = new_game,
                     MatchUpdateStatus::Finished(outcome) => {
+                        match outcome {
+                            MatchOutcome::Checkmate(_) => println!(
+                                "{move_count}: {mi}: checkmate, game = {}",
+                                m.game.board.fen()
+                            ),
+                            MatchOutcome::Stalemate => println!("{move_count}: {mi}: stalemate"),
+                            MatchOutcome::Draw => println!("{move_count}: {mi}: draw"),
+                        }
                         m.outcome = Some(outcome);
                         rem.push(mi);
                     }
