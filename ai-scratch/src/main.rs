@@ -113,20 +113,6 @@ fn tournament_selection(scores: &[f32], tournament_size: usize, parents: usize) 
     res
 }
 
-fn get_selected_players(generation: Generation, selection: &[usize]) -> Vec<Player> {
-    let set: HashSet<_> = selection.iter().copied().collect();
-
-    let mut parents = Vec::with_capacity(selection.len());
-
-    for (i, p) in generation.players.into_iter().enumerate() {
-        if set.contains(&i) {
-            parents.push(p);
-        }
-    }
-
-    parents
-}
-
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let state = State::new().await;
@@ -170,10 +156,10 @@ tournament size = {tournament_size}
                 generation.generate_matches(match_count);
                 generation.play().await;
                 let scores = generation.calculate_scores();
-                let selection = tournament_selection(&scores, tournament_size, parent_count);
-                parents = get_selected_players(generation, &selection);
+                parents = tournament_selection(&scores, tournament_size, parent_count);
             } else {
-                parents = Vec::with_capacity(parent_count);
+                parents = (0..parent_count).collect();
+                let mut parents = Vec::with_capacity(parent_count);
 
                 let mut highest_saved_parent: usize = usize::MAX;
                 let mut parent_i = 0;
@@ -198,11 +184,13 @@ tournament size = {tournament_size}
                         }
                     }
                 }
+
+                generation = Generation::new(parents);
             }
 
             while g <= g_end {
                 println!("--- GENERATION {g} ---");
-                generation = Generation::populate(
+                generation = generation.populate(
                     &state,
                     parents,
                     pop_size,
@@ -214,15 +202,18 @@ tournament size = {tournament_size}
                 generation.generate_matches(match_count);
                 generation.play().await;
                 let scores = generation.calculate_scores();
-                let selection = tournament_selection(&scores, tournament_size, parent_count);
-                parents = get_selected_players(generation, &selection);
+                parents = tournament_selection(&scores, tournament_size, parent_count);
                 g += 1;
 
                 if g % save_interval == 0 {
-                    parents.iter().enumerate().for_each(|(i, p)| {
-                        p.save(&format!("./ai-scratch/models/model-{g}-{i}.params"))
-                            .unwrap()
-                    });
+                    parents
+                        .iter()
+                        .map(|i| generation.players.get(*i).unwrap())
+                        .enumerate()
+                        .for_each(|(i, p)| {
+                            p.save(&format!("./ai-scratch/models/model-{g}-{i}.params"))
+                                .unwrap()
+                        });
                 }
             }
         }

@@ -3,7 +3,6 @@ use std::collections::HashSet;
 use poulet_ai_common::encode_board;
 use poulet_chess::{Board, Game};
 use rand::{Rng, seq::SliceRandom};
-use rand_distr::Distribution;
 use rayon::prelude::*;
 
 use crate::model::{BATCH_SIZE, Player, State, predict_move};
@@ -72,8 +71,9 @@ impl Generation {
     }
 
     pub fn populate(
+        self,
         state: &State,
-        parents: Vec<Player>,
+        parents: Vec<usize>,
         pop_size: usize,
         mut_dev: f32,
         burst_mut_rate: f32,
@@ -88,9 +88,11 @@ impl Generation {
 
         let mut all_couples = Vec::with_capacity(parents.len() * parents.len() - parents.len());
         for a in 0..parents.len() {
+            let pa = *parents.get(a).unwrap();
             for b in 0..parents.len() {
+                let pb = *parents.get(b).unwrap();
                 if a != b {
-                    all_couples.push((a, b));
+                    all_couples.push((pa, pb));
                 }
             }
         }
@@ -105,9 +107,9 @@ impl Generation {
                 mut_dev
             };
 
-            let player = parents.get(a).unwrap().crossover_and_mutate(
+            let player = self.players.get(a).unwrap().crossover_and_mutate(
                 state,
-                parents.get(b).unwrap(),
+                self.players.get(b).unwrap(),
                 0.5,
                 dev,
             );
@@ -115,8 +117,16 @@ impl Generation {
             players.push(player);
         }
 
-        let mut truncated_elite = parents.into_iter().take(corrected_elitism_count).collect();
-        players.append(&mut truncated_elite);
+        let parent_set: HashSet<_> = parents.iter().copied().collect();
+        for (_, p) in self
+            .players
+            .into_iter()
+            .enumerate()
+            .filter(|(i, _)| parent_set.contains(i))
+            .take(corrected_elitism_count)
+        {
+            players.push(p);
+        }
 
         players.reverse();
 
