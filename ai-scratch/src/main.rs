@@ -197,14 +197,12 @@ Random global score: {}
                 (wins[0] as f32) / (game_count as f32) * 100.0,
                 losses[0],
                 (losses[0] as f32) / (game_count as f32) * 100.0,
-                ((game_count - wins[0] - losses[0]) as f32) * 0.5 + (wins[0] as f32)
-                    - (losses[0] as f32),
+                ((game_count - wins[0] - losses[0]) as f32) * 0.5 + (wins[0] as f32),
                 wins[1],
                 (wins[1] as f32) / (game_count as f32) * 100.0,
                 losses[1],
                 (losses[1] as f32) / (game_count as f32) * 100.0,
                 ((game_count - wins[1] - losses[1]) as f32) * 0.5 + (wins[1] as f32)
-                    - (losses[1] as f32)
             );
         }
         _ => {
