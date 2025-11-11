@@ -81,21 +81,23 @@ impl Generation {
         elitism_count: usize,
     ) -> Self {
         let mut rng = rand::rng();
-        let distr = rand::distr::Uniform::new(0, parents.len()).unwrap();
 
         let corrected_elitism_count = elitism_count.min(parents.len());
 
         let mut players = Vec::with_capacity(pop_size);
 
-        for _ in 0..(pop_size - corrected_elitism_count) {
-            let (a, b) = loop {
-                let a = distr.sample(&mut rng);
-                let b = distr.sample(&mut rng);
-
+        let mut all_couples = Vec::with_capacity(parents.len() * parents.len() - parents.len());
+        for a in 0..parents.len() {
+            for b in 0..parents.len() {
                 if a != b {
-                    break (a, b);
+                    all_couples.push((a, b));
                 }
-            };
+            }
+        }
+        all_couples.shuffle(&mut rng);
+
+        for i in 0..(pop_size - corrected_elitism_count) {
+            let (a, b) = *all_couples.get(i % all_couples.len()).unwrap();
 
             let dev = if rng.random::<f32>() < burst_mut_rate {
                 burst_mut_dev
