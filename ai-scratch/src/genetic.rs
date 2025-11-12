@@ -5,7 +5,7 @@ use poulet_chess::{Board, Game};
 use rand::{Rng, seq::SliceRandom};
 use rayon::prelude::*;
 
-use crate::model::{BATCH_SIZE, Player, State, predict_move};
+use crate::model::{Player, State, predict_move};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum MatchOutcome {
@@ -199,7 +199,7 @@ impl Generation {
                                 None
                             }
                         })
-                        .take(BATCH_SIZE)
+                        .take(p.batch_size)
                         .unzip();
 
                     if match_indices.len() == 0 {

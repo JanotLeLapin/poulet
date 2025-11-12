@@ -11,6 +11,14 @@ use rand_distr::Distribution;
 fn cli() -> Command {
     Command::new("poulet")
         .about("A toy generic algorithm that learns to play chess")
+        .arg(
+            Arg::new("batch-size")
+                .long("batch-size")
+                .short('b')
+                .default_value("32")
+                .value_parser(value_parser!(usize)
+            )
+        )
         .subcommand_required(true)
         .subcommands([
             Command::new("train")
@@ -115,9 +123,10 @@ fn tournament_selection(scores: &[f32], tournament_size: usize, parents: usize) 
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let state = State::new().await;
-
     let m = cli().get_matches();
+
+    let batch_size = *m.get_one("batch-size").unwrap();
+    let state = State::new(batch_size).await;
     match m.subcommand() {
         Some(("train", sub)) => {
             let mut g: usize = *sub.get_one("gen-start").unwrap();

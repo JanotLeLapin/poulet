@@ -11,8 +11,6 @@ use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
 };
 
-pub const BATCH_SIZE: usize = 32;
-
 #[repr(C)]
 #[derive(Clone, Copy, Pod, Zeroable)]
 pub struct Params {
@@ -21,7 +19,9 @@ pub struct Params {
     _pad: [u32; 2],
 }
 
+#[derive(Clone)]
 pub struct State {
+    pub batch_size: usize,
     pub instance: Arc<wgpu::Instance>,
     pub adapter: Arc<wgpu::Adapter>,
     pub device: Arc<wgpu::Device>,
@@ -54,6 +54,7 @@ pub struct DenseLayer {
 }
 
 pub struct Player {
+    pub batch_size: usize,
     device: Arc<wgpu::Device>,
     queue: Arc<wgpu::Queue>,
 
@@ -67,7 +68,7 @@ pub struct Player {
 }
 
 impl State {
-    pub async fn new() -> Self {
+    pub async fn new(batch_size: usize) -> Self {
         let instance = wgpu::Instance::new(&Default::default());
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions::default())
@@ -99,6 +100,7 @@ impl State {
         });
 
         Self {
+            batch_size,
             instance: Arc::new(instance),
             adapter: Arc::new(adapter),
             device,
@@ -135,6 +137,7 @@ impl DenseLayerParams {
 
 impl DenseLayer {
     pub fn new(
+        batch_size: usize,
         device: Arc<wgpu::Device>,
         queue: Arc<wgpu::Queue>,
         pipeline: Arc<wgpu::ComputePipeline>,
@@ -164,21 +167,21 @@ impl DenseLayer {
 
         let input_buffer = device.create_buffer(&BufferDescriptor {
             label: Some("input"),
-            size: (BATCH_SIZE * params.input_size * std::mem::size_of::<f32>()) as u64,
+            size: (batch_size * params.input_size * std::mem::size_of::<f32>()) as u64,
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         });
 
         let temp_buffer = device.create_buffer(&BufferDescriptor {
             label: Some("temp"),
-            size: (BATCH_SIZE * params.output_size * std::mem::size_of::<f32>()) as u64,
+            size: (batch_size * params.output_size * std::mem::size_of::<f32>()) as u64,
             usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
             mapped_at_creation: false,
         });
 
         let output_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("output"),
-            size: (BATCH_SIZE * params.output_size * std::mem::size_of::<f32>()) as u64,
+            size: (batch_size * params.output_size * std::mem::size_of::<f32>()) as u64,
             usage: wgpu::BufferUsages::COPY_SRC | wgpu::BufferUsages::STORAGE,
             mapped_at_creation: false,
         });
@@ -235,6 +238,7 @@ impl Player {
         output_layer_params: DenseLayerParams,
     ) -> Self {
         let hidden_layer_a = DenseLayer::new(
+            state.batch_size,
             state.device.clone(),
             state.queue.clone(),
             state.pipeline.clone(),
@@ -242,6 +246,7 @@ impl Player {
         );
 
         let hidden_layer_b = DenseLayer::new(
+            state.batch_size,
             state.device.clone(),
             state.queue.clone(),
             state.pipeline.clone(),
@@ -249,6 +254,7 @@ impl Player {
         );
 
         let output_layer = DenseLayer::new(
+            state.batch_size,
             state.device.clone(),
             state.queue.clone(),
             state.pipeline.clone(),
@@ -256,6 +262,7 @@ impl Player {
         );
 
         Self {
+            batch_size: state.batch_size,
             device: state.device.clone(),
             queue: state.queue.clone(),
             hidden_layer_a_params,
